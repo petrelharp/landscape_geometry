@@ -1,0 +1,16 @@
+Kigami, Analysis on Fractals:
+- Resistances are *squared* distances
+- The spectral exponent $d_S$ (defined thm 4.1.5), or density of states, gives the growth of the eigenvalues: $\lambda_n \sim n^{2/d_S}$.
+- The Aronson-type inequality for off-diagonal elements of the heat kernel, as Barlow proved for the Sierpinski gasket,
+  $$ p(t,x,y) \sim c t^{-d_S/2} \exp( - c ( |x-y|^{d_w} / t )^{1/(d_w-2)} ) $$
+  can be extended to affine nested fractals, replacing $|x-y|^d_w$ with $R(x,y)^{d_H-1}$ (see p.178);
+  but this fails without such strong symmetry; and furthermore, $\lim_{t \to 0} \log p(t,x,x) / \log t$ (local spectral dimension) 
+  and $\lim_{r \to 0} \E^x[T_{B_r(x)}]/\log r$ (local walk dimension) can depend on $x$ in some cases (see Hambly & Kumagi),
+  exhibiting "multi-fractal" nature (although they maybe have the same asymptotics; see 5.3.1?)
+- There exist eigenfunctions of the Laplacian with bounded support!  ("localized eigenfunctions")
+- The $n$th power of the Green's operator is continuous for $n > d_S \bar \delta / 2$ (see just above 5.3.5)
+- The second eigenvalue of $A_i$ is the "resistance scaling ratio" (p.180; but what is $A_i$?)
+
+Oliveira,  On the coalescence time of reversible random walks:
+- The mean coalescent time, starting with an arbitrary configuration of many particles, is bounded by a universal constant times the maximal mean hitting time.  (conjectured by Aldous-Fill)
+- Also, the mean time until having $k$ clusters is, up to a universal constant, bounded by $1/k$ times the maximal mean hitting time plus the mixing time.
