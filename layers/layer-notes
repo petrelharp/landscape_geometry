@@ -1,0 +1,14 @@
+- [Mentzelia tridentata](mentzelia_tridentata)
+    * downloaded from [data basin](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) on 11/24/15
+    * 270m
+    * how to read it in?
+        - in the shell, this `ogrinfo -al mentzelia_tridentata` gives the layer name
+        - in R, this works given the layer name: `ogrInfo("mentzelia_tridentata",layer="Mentzelia_tridentata")`
+
+- [Desert vegtation classification](desert_veg)
+    * downloaded from [BIOS](https://map.dfg.ca.gov/bios/?bookmark=534) on 11/24/15
+    * by Todd Keeler-Wolf for DRECP
+    * [western](desert_veg/western/metadata.html)
+    * [eastern](desert_veg/eastern/metadata.html)
+    * [anza borrego](desert_veg/anza_borrego/metadata.html)
+    * to read, use e.g. `x <- readOGR(layer="ds165",dsn="ds165.gdb")`
