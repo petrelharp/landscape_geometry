@@ -1,3 +1,6 @@
+Downloaded:
+-------------------
+
 - [Mentzelia tridentata](mentzelia_tridentata)
     * downloaded from [data basin](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) on 11/24/15
     * 270m
@@ -12,3 +15,36 @@
     * [eastern](desert_veg/eastern/metadata.html)
     * [anza borrego](desert_veg/anza_borrego/metadata.html)
     * to read, use e.g. `x <- readOGR(layer="ds165",dsn="ds165.gdb")`
+
+
+
+Other possiblities:
+-------------------
+
+From environmental niche models, including various climate scenarios, for desert plant species, 
+on [data basin](http://databasin.org/galleries/f6344e81da864023a9fb550231fdcafc):
+
+**Mojave:**
+
+- [Mentzelia tridentata](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) (creamy blazing star)
+    * relatively continuous
+
+- [Eschscholzia minutiflora ssp twisselmannii](http://databasin.org/datasets/96a4bf19c331413b9c5acc783adcfabc) (red rock poppy)
+    * sparser, with many snakey/linear bits
+
+- [Mimulus mohavensis](http://databasin.org/datasets/5aa3a1a3a6cc47aa909de45cc63e46af) (Mojave monkeyflower)
+    * lots of little sparse patches
+
+- [Muhlenbergia appressa](http://databasin.org/datasets/efbac3d421d24d0386d0290b197197c8) (Devil's canyon muhly, a grass)
+    * fewer, bigger patches
+
+**Sonoran:**
+
+    - [Senna covesii](http://databasin.org/datasets/857237fc5ff64a1584674bd274013ce8) (Coves' senna)
+    * lots of big, connected patches
+
+- [Astragalus insularis var harwoodii](http://databasin.org/datasets/73d2dafe5c2447aca58597f9a1a9984b) (Harwood's milkvetch)
+    * semi-connected, smallish patches
+
+- [Abronia villosa var aurita](http://databasin.org/datasets/8d888852c9d74c0499dcfba8b3f215e1) (desert sand-verbena)
+    * widely distributed around on mountains
