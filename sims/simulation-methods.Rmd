@@ -8,7 +8,7 @@ author: "Peter Ralph"
 ```{r doc_setup, include=FALSE}
 fig.dim <- 5
 knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
-library(landsim)
+devtools::load_all("landsim")
 library(Matrix)
 library(raster)
 ```
@@ -20,17 +20,129 @@ plot(habitat)
 ```
 
 
-Migration matrices
-==================
+Migration operations
+====================
 
-The first thing we'll need to do is create migration matrices.
-The easiest is nearest-neighbor migration:
+We can do migration in two ways:
+either by matrix multiplication,
+or by doing smoothing operations directly on the layers.
+
+
+Matrices
+--------
+
+The easiest migration matrix to create is a nearest-neighbor migration:
 ```{r nn_mig}
-nn.mig <- layer_adjacency(habitat,migration=TRUE)
+nn.mig <- layer_adjacency(habitat)
 image(nn.mig)
 ```
 
-Now, consider a truncated Gaussian kernel:
+Alternatively, consider a Gaussian kernel:
 ```{r gaus_mig}
+gauss.mig <- kernel_adjacency(habitat,sigma=5e4,radius=2e5,fun="gaussian")
+image(gauss.mig)
 ```
 
+Or, a two-dimensional, symmetric Cauchy kernel:
+```{r gaus_mig}
+cauchy.mig <- kernel_adjacency(habitat,sigma=5e4,radius=2e5,fun="cauchy")
+image(cauchy.mig)
+```
+
+
+Smoothing operations
+--------------------
+
+The `raster` package does smoothing operations directly, with `raster::focal`.
+For instance, we can assign random values to the non-NA values in the layer
+and then smooth them with a Gaussian kernel:
+```{r gauss_smooth}
+N <- habitat
+values(N)[!is.na(values(N))] <- rpois(sum(!is.na(values(N))),100)
+image(N)
+gauss.N <- kernel_migrate(N,radius=2e5,sigma=5e4)
+image(gauss.N)
+```
+
+
+A simulation step
+=================
+
+Beginning with a population:
+```{r init_pop}
+N <- brick( habitat, habitat, habitat )
+genotypes <- names(N) <- c("aa","aA","AA")
+for (k in 1:3) {
+    values(N[[k]])[!is.na(values(habitat))] <- rpois(sum(!is.na(values(habitat))),100)
+}
+```
+
+And the population parameters:
+```{r init_params}
+# probability of seeding in a given year
+prob.seed <- 0.2
+# distance scaling factor for kernels
+sigma <- 5e4
+# pollen dispersal kernel
+pollen.kernel <- function (x) { exp(-sqrt(x)) }
+max.pollen.dist <- 2e5
+# seed dispersal kernel
+seed.kernel <- "gaussian"
+max.seed.dist <- 2e5
+# genotype offspring tensor: 
+#  [i,j,k] is the probability that genotypes i and j combine to make offspring genotype k
+mating.tensor <- array( c(
+        # aa offspring
+        1,   1/2,   0, # aa
+        1/2, 1/4,   0, # aA
+        0,     0,   0, # AA
+        # aA offspring
+        0,   1/2,   1, # aa
+        1/2, 1/2, 1/2, # aA
+        1,   1/2,   0, # AA
+        # AA offspring
+        0,     0,   0, # aa
+        0,   1/4, 1/2, # aA
+        0,   1/2,   1  # AA
+        ), dim=c(3,3,3) )
+dimnames(mating.tensor) <- list( genotypes, genotypes, genotypes )
+# probability of survival
+prob.survival <- 0.8
+```
+
+
+1. **Sample the number of seed-producing individuals:**
+
+```{r seeds}
+M <- rbinom_raster(N,prob.seed)
+```
+
+2. **Find the mean pollen flux:**
+
+```{r pollen}
+P <- kernel_migrate(N,fun=pollen.kernel,sigma=sigma,radius=max.pollen.dist)
+```
+
+3. **Find the mean seed production field:**
+
+```{r mean_seed}
+S <- seed_production(seeders=M,pollen=P,mating=mating.tensor)
+```
+
+4. **Disperse seeds:**
+
+```{r disperse_seeds}
+SD <- kernel_migrate(S,fun=seed.kernel,sigma=sigma,radius=max.seed.dist)
+```
+
+5. **Sample new individuals:**
+
+```{r new_inds}
+G <- rpois_raster(SD)
+```
+
+6. **Kill off old individuals and add in new ones:**
+
+```{r next_gen}
+NN <- rbinom_raster(N,prob.survival) + G
+```
