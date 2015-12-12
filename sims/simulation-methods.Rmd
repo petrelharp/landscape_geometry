@@ -1,0 +1,36 @@
+---
+title: "Forwards landscape genomics simulations."
+date: "`r date()`"
+author: "Peter Ralph"
+---
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 5
+knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
+library(landsim)
+library(Matrix)
+library(raster)
+```
+
+Here's a simple layer we'll work with:
+```{r setup_layer}
+habitat <- raster("layers/example/really_small")
+plot(habitat)
+```
+
+
+Migration matrices
+==================
+
+The first thing we'll need to do is create migration matrices.
+The easiest is nearest-neighbor migration:
+```{r nn_mig}
+nn.mig <- layer_adjacency(habitat,migration=TRUE)
+image(nn.mig)
+```
+
+Now, consider a truncated Gaussian kernel:
+```{r gaus_mig}
+```
+
