@@ -13,9 +13,9 @@ library(raster)
 devtools::load_all("../landsim")
 ```
 
-Here's a simple layer we'll work with.
-Note that units are in meters.
-```{r setup_layer}
+Here's a simple habitat we'll work with.
+Note that spatial units are in meters; the values are carrying capacities.
+```{r setup_layer, fig.cap="The (random) habitat.", fig.width=fig.dim}
 habitat <- raster(xmn=-1000, xmx=1000, ymn=-1000, ymx=1000, 
       resolution=100,
       crs="+proj=utm +zone=11 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
