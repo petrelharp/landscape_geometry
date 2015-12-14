@@ -1,0 +1,129 @@
+---
+title: "Speeding up raster operations"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 3
+knitr::opts_chunk$set(fig.width=3*fig.dim,fig.height=fig.dim,fig.align='center')
+library(Matrix)
+library(raster)
+library(microbenchmark)
+devtools::load_all("../../landsim/")
+this.plot <- function (x,nr=1,zlim=c(0,max(values(x),na.rm=TRUE)),...) {
+    plot(x,nr=nr,zlim=zlim,...)
+}
+```
+
+Here are the demographic parameters:
+```{r fancy_setup}
+germination.args <- list( 
+             r0 = 0.01,
+             competition = migration(
+                                     kern="gaussian",
+                                     sigma=100,
+                                     radius=300,
+                                     normalize=1
+                                 )
+         )
+germination_fun <- function (N,carrying.capacity,...) {
+    germination.args$r0 / ( 1 + migrate(N,germination.args$competition)/carrying.capacity )
+}
+
+this.demography <- demography(
+        prob.seed = 0.2,
+        fecundity = 200,
+        prob.germination = germination_fun,
+        prob.survival = 0.9,
+        pollen.migration = migration(
+                            kern = function (x) { exp(-sqrt(x)) },
+                            sigma = 100,
+                            radius = 1000,
+                            normalize = NULL
+                     ),
+        seed.migration = migration(
+                            kern = "gaussian",
+                            sigma = 20,
+                            radius = 400,
+                            normalize = 1
+                     ),
+        genotypes = c("aa","aA","AA"),
+        mating = mating_tensor( c("aa","aA","AA") ),
+        germination.ags = germination.args
+    )
+
+# 50km x 50km with 100m resolution
+habrad <- 50
+habitat <- raster(xmn=-habrad*1000/2, xmx=habrad*1000/2, ymn=-habrad*1000/2, ymx=habrad*1000/2,
+      resolution=100,
+      crs="+proj=utm +zone=11 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+values(habitat) <- sample( 100*c(1,2,5,NA), length(habitat), replace=TRUE )
+```
+
+Here's how long it takes to run the `migrate` function with no modification:
+```{r time_migrate}
+system.time( migrate(habitat,kern="gaussian",sigma=200,radius=1000) )
+```
+
+In that, the key step is running `focal`:
+```{r migrate_guts}
+layer <- habitat
+# making matrix below for pollen migration takes too much memory
+this.migration <- this.demography$seed.migration
+system.time( {
+        kern <- function (x) { exp(-x^2/2) / (2*pi) }
+        sigma <- this.migration$sigma
+        radius <- this.migration$radius
+        area <- prod(raster::res(layer))
+        cell.radius <- ceiling(radius/raster::res(layer))
+        w <- matrix(nrow=2*cell.radius[1]+1,ncol=2*cell.radius[2]+1)
+        cc <- cell.radius+1
+        w[] <- kern( sqrt( (xres(layer)*(row(w)-cc[1]))^2 + (yres(layer)*(col(w)-cc[2]))^2 )/sigma ) * area/sigma^2
+        w <- w/sum(w)
+    } )
+system.time( {
+        out <- focal( layer, w=w, na.rm=TRUE, pad=TRUE, pad.value=0 )
+    } )
+system.time( {
+        out[is.na(layer)] <- NA
+    } )
+```
+
+More precisely,
+```{r time_focal}
+microbenchmark( focal( layer, w=w, na.rm=TRUE, pad=TRUE, pad.value=0 ), times=20 )
+```
+
+Padding
+=======
+
+Now, let's see what happens if we pre-pad the matrix and don't ask `focal` to pad things.
+```{r pad_layer}
+habitat.pad <- extend( habitat, extent( c(xmin=xmin(habitat)-radius, xmax=xmax(habitat)+radius, ymin=ymin(habitat)-radius, ymax=ymax(habitat)+radius) ) )
+microbenchmark( focal( layer, w=w, na.rm=TRUE ), times=20 )
+```
+
+That seems worthwhile.
+
+
+Matrix operations
+=================
+
+Alternatively, we could precompute the weighting matrix and use linear algebra.
+```{r setup_matrix}
+M <- kernel_adjacency( habitat, this.migration )
+M.habitat <- habitat
+nonzeros <- !is.na(values(M.habitat))
+system.time( 
+        values(M.habitat)[nonzeros] <- ( M %*% values(M.habitat)[nonzeros] )@x
+    )
+# comparison
+system.time(
+        migrate.habitat <- migrate(habitat,this.migration )
+    )
+plot( M.habitat ) 
+plot( migrate.habitat )
+```
+
