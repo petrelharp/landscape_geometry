@@ -84,7 +84,7 @@ system.time( {
         w <- w/sum(w)
     } )
 system.time( {
-        out <- focal( layer, w=w, na.rm=TRUE, pad=TRUE, pad.value=0 )
+        out <- focal( layer, w=w, na.rm=TRUE, pad=TRUE, padValue=0 )
     } )
 system.time( {
         out[is.na(layer)] <- NA
@@ -93,7 +93,7 @@ system.time( {
 
 More precisely,
 ```{r time_focal}
-microbenchmark( focal( layer, w=w, na.rm=TRUE, pad=TRUE, pad.value=0 ), times=20 )
+microbenchmark( focal( layer, w=w, na.rm=TRUE, pad=TRUE, padValue=0 ), times=20 )
 ```
 
 Padding
