@@ -1,12 +1,7 @@
-Downloaded:
--------------------
 
-- [Mentzelia tridentata](mentzelia_tridentata)
-    * downloaded from [data basin](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) on 11/24/15
-    * 270m
-    * how to read it in?
-        - in the shell, this `ogrinfo -al mentzelia_tridentata` gives the layer name
-        - in R, this works given the layer name: `ogrInfo("mentzelia_tridentata",layer="Mentzelia_tridentata")`
+
+Vegetation classification:
+==========================
 
 - [Desert vegtation classification](desert_veg)
     * downloaded from [BIOS](https://map.dfg.ca.gov/bios/?bookmark=534) on 11/24/15
@@ -18,16 +13,36 @@ Downloaded:
 
 
 
-Other possiblities:
--------------------
+Maxent species distribution models:
+==========================
+
+
+Climate projection models
+-------------------------
 
 From environmental niche models, including various climate scenarios, for desert plant species, 
 on [data basin](http://databasin.org/galleries/f6344e81da864023a9fb550231fdcafc):
 
+How to get these into `R`, using *Mentzelia tridentata* as an example:
+
+0.  In the downloaded `.zip` file, there's a `data/v93/tempgdb.gdb/` directory with various `gdb` files in it.
+    (Find these with `find . -name gdb`.)
+
+1.  This gives info about the files: `ogrinfo -al data/v93/tempgdb.gdb/` including the layer name
+
+2.  This can convert the file to something `R` can manage: `ogr2ogr output_dirname data/v93/tempgdb.gdb/`
+
+*Note:*  in R, this works, once `ogrinfo` has given us the layer name (here is `"Mentzelia_tridentata"`): 
+`ogrInfo("mentzelia_tridentata",layer="Mentzelia_tridentata")`
+
+
 **Mojave:**
 
-- [Mentzelia tridentata](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) (creamy blazing star)
+
+- [Mentzelia tridentata](mentzelia_tridentata) (creamy blazing star)
     * relatively continuous
+    * downloaded from [data basin](http://databasin.org/datasets/fe1ade4bfc0e4ba6967320cf1eb4d231) on 11/24/15
+    * 270m
 
 - [Eschscholzia minutiflora ssp twisselmannii](http://databasin.org/datasets/96a4bf19c331413b9c5acc783adcfabc) (red rock poppy)
     * sparser, with many snakey/linear bits
@@ -48,3 +63,14 @@ on [data basin](http://databasin.org/galleries/f6344e81da864023a9fb550231fdcafc)
 
 - [Abronia villosa var aurita](http://databasin.org/datasets/8d888852c9d74c0499dcfba8b3f215e1) (desert sand-verbena)
     * widely distributed around on mountains
+
+
+Current extent 
+--------------
+
+These are available through the [UCSB Bren school](http://www.biogeog.ucsb.edu/);
+a big file containing TIFFs of ranges for many species is [available](ftp://ftp.biogeog.ucsb.edu/pub/org/biogeog/data/CEC_desert/Mojavset.rar).
+
+- [Downloaded](ftp://ftp.biogeog.ucsb.edu/pub/org/biogeog/data/CEC_desert/Mojavset.rar) on 12/20/2015.
+- Species ranges in [Mojavset/Spatial/targets/biodiversity/binary](Mojavset/Spatial/targets/biodiversity/binary).
+- Load with e.g. `x <- raster("Mojavset/Spatial/targets/biodiversity/binary/Boechera_shockleyi_broad_extent_avg.tif")`.

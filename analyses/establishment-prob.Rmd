@@ -1,0 +1,153 @@
+---
+title: "Estimating the probability of establishment."
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 4
+knitr::opts_chunk$set(fig.width=3*fig.dim,fig.height=fig.dim,fig.align='center')
+library(Matrix)
+library(raster)
+library(rgeos)
+devtools::load_all("../landsim")
+```
+
+```{r setup}
+layerdir <- "../layers/Mojavset/Spatial/targets/biodiversity/binary"
+layername <- "Eschscholzia_minutiflora_ssp_twisselmannii_broad_extent_avg.tif"
+# habitats are listed with 0=absence, 1=presence.
+habitat <- raster( file.path(layerdir,layername) )
+```
+
+Here's the raster:
+```{r show_habitat, fig.width=fig.dim}
+## Process the habitat:  THIS TAKES HELLA LONG
+# cats <- select_clumps(subs(habitat,data.frame(c(0,1),c(NA,1))),30e3)
+# habextent <- extent(trim(subs(cats,data.frame(by=1,which=1),subsWithNA=TRUE)))
+# habextent <- c( mean(habextent[1:2])+1.1*(habextent[1:2]-mean(habextent[1:2])), 
+#                 mean(habextent[3:4])+1.1*(habextent[3:4]-mean(habextent[3:4])) )
+# habextent <- c( max(habextent[1],extent(habitat)[1]),
+#                 min(habextent[2],extent(habitat)[2]),
+#                 max(habextent[3],extent(habitat)[3]),
+#                 min(habextent[4],extent(habitat)[4]) )
+# habitat <- crop( habitat, extent( 
+cropbox <- extent( c(
+            xmin        = -2093993,
+            xmax        = -1849272,
+            ymin        =  1468496,
+            ymax        =  1663602 ))
+plot(habitat,main=layername)
+# lines( cropbox )
+habitat <- crop( habitat, cropbox )
+```
+
+To estimate the probability of establishment,
+we'll: 
+
+1.  Select some regularly-spaced 'mutant' locations,
+2.  Initiate a simulation with single copies of advantageous alleles there, and
+3.  Run it forwards to count how many establish.
+
+
+# Demography
+
+First we need a demographic set-up.
+```{r demog_setup}
+pop <- population( 
+                  habitat = habitat,
+                  accessible=!is.na(values(habitat)),
+                  habitable=(!is.na(values(habitat)) & values(habitat)>0),
+                  genotypes = c("aa","aA","AA"),
+                  N = cbind( aa=rpois_raster(carrying.capacity,only.values=TRUE),
+                             aA=0, 
+                             AA=0 )
+             )
+
+germination.args <- list( 
+             r0 = 0.01,  # one in ten seeds will germinate at low densities
+             s = 1.5,    # multiplicative selective benefit of the A allele
+             carrying.capacity = 100, 
+             competition = migration(
+                                     kern="gaussian",
+                                     sigma=100,
+                                     radius=300,
+                                     normalize=1,
+                                     do.M=TRUE,
+                                     population=pop
+                                 )
+         )
+germination_fun <- function (N, ...) {
+    out <- germination.args$r0 / ( 1 + migrate(germination.args$competition,x=rowSums(N))/germination.args$carrying.capacity )
+    return( cbind( aa=out, aA=germination.args$s*out, AA=germination.args$s^2*out ) )
+}
+
+this.demography <- demography(
+        prob.seed = 0.2,
+        fecundity = 100,
+        prob.germination = germination_fun,
+        prob.survival = 0.9,
+        pollen.migration = migration(
+                            kern = function (x) { exp(-sqrt(x)) },
+                            sigma = 300,
+                            radius = 1200,
+                            normalize = NULL,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        seed.migration = migration(
+                            kern = "gaussian",
+                            sigma = 100,
+                            radius = 1200,
+                            normalize = 1,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        genotypes = c("aa","aA","AA"),
+        mating = mating_tensor( c("aa","aA","AA") )
+    )
+```
+
+
+# Sample mutation locations
+
+We choose locations by picking 200 random locations in the habitat,
+and picking a maximal set of these so that their surrounding 10km circles
+do not overlap.
+```{r sample_muts}
+nhoods <- sample_neighborhoods( subs(habitat,data.frame(1,1)), n=200, radius=10*res(habitat) )
+plot(habitat)
+points(nhoods$centers,pch="*",cex=2)
+lines(nhoods$neighborhoods)
+```
+
+# Initiate mutations
+
+Now, we'll set each location to have one mutation.
+```{r set_muts}
+pop <- set_N( pop, 1, i=nhoods$center.cells, j="aA" )
+colSums(pop$N)
+```
+
+
+# Simulate forwards
+
+Now we need to run it forwards some generations,
+and record the numbers of *A* alleles in each neighborhood.
+```{r sim_muts}
+plot.times <- seq(0,100,length.out=11)
+sim <- simulate( pop, this.demography, times=plot.times, 
+                summaries=c( census_neighborhoods( pop, nhoods ),  
+                            list( totals=function(x){colSums(x$N)} ) )
+            )
+plot(sim_to_brick(sim,pop)[["aA"]])
+```
+
+Here's the numbers of *aA* and *AA* genotypes in each neighborhood:
+```{r show_mut_growth, fig.width=fig.dim}
+matplot(sim$summaries$aA,type='l',lty=1)
+matlines(sim$summaries$AA,type='l',lty=2)
+```
+

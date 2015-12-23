@@ -146,7 +146,15 @@ or perhaps the outcome of the previous local simulations.
 
 
 
-## Methods:
+## Modeling
 
-Use geography plus migration kernel to obtain migration matrix;
-simulate forwards-time in R.
+
+**Questions:**
+
+1.  Can measure distance intrinsically (within the set of accessible locations) or extrinsically (as the crow flies).
+
+
+**Notes:**
+
+1.  Code the range as 1 for habitable, 0 for accessible but inhabitable, and NA for inaccessible.
+
