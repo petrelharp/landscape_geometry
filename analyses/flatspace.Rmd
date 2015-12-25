@@ -98,7 +98,7 @@ mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutlo
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
-    sim <- simulate( pop, demog, times=100,
+    sim <- simulate( pop, demog, times=seq(0,100,length.out=11),
                      summaries= list( totals=function(N){colSums(N)} ) )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")
@@ -108,7 +108,7 @@ for (ntries in 1:100) {
 
 Now, run longer:
 ```{r run_longer, cache=TRUE, depends="init_muts", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
-sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=291),
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
                  summaries= list( totals=function(N){colSums(N)} ) )
 pl <- function (x,...) { hab <- do.call(stack,list(habitat)[rep(1,NCOL(x))]); values(hab)[pop$habitable] <- x; plot(hab,nr=1,...) }
 for (i in seq_along(sim$times)) {
@@ -152,6 +152,13 @@ est.widths <- colMeans(quant.dists[AA.usethese,],na.rm=TRUE)
 
 ## Comparison to theory
 
+**Generation time:**
+We also need the generation time,
+because what we're calling a generation isn't, really.
+Generation time in this simulation is determined by the probability of death per generation,
+which here is `r demog$prob.survival`.
+
+**Dispersal distance:**
 Simulation doesn't match up with theory so well above.
 But, we're using a naive estimate of the dispersal distance, $\sigma$.
 We can get a better estimate from the migration matrix itself;
@@ -165,7 +172,7 @@ pl(seed.sigmas,main="sigma for seeds")
 pl(pollen.sigmas,main="sigma for pollen")
 s <- (germination.args$s-1)
 ctab <- data.frame(
-           speed = c( expected = 2 * mean.sigma * sqrt(s) ,
+           speed = c( expected = 2 * mean.sigma * sqrt(s) / (1-demog$prob.survival) ,
                       observed = AA.speed ),
            width = c( expected = 2 * mean.sigma / sqrt(s) ,
                       observed = est.widths[2] ) )

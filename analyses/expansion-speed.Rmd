@@ -119,7 +119,7 @@ We'll place the single mutation, run it forwards for 100 generations, and if it 
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
-    sim <- simulate( pop, demog, times=100,
+    sim <- simulate( pop, demog, times=seq(0,100,length.out=11),
                      summaries= list( totals=function(N){colSums(N)} ) )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")
@@ -131,7 +131,7 @@ for (ntries in 1:100) {
 
 Now, we'll run it for longer.
 ```{r run_longer, cache=TRUE, depends="sim_muts"}
-sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=291),
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
                  summaries= list( totals=function(N){colSums(N)} ) )
 matplot( sim$summaries[[1]], type='l', lty=1 )
 legend("topright",lty=1,col=1:3,legend=pop$genotypes)
@@ -165,7 +165,8 @@ AA.speed
 The wave is moving at about `r AA.speed` meters per generation;
 the *A* allele has advantage `r germination.args$s-1`;
 the mean migration distance is about `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)` meters;
-so the predicted speed is `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s-1))` meters per generation.
+so the predicted speed is `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s-1)/(1-demog$prob.survival))` meters per generation.
+(Really, one generation is `r 1/(1-demog$prob.survival)` of the time steps we here call "generations".)
 
 
 # Width of the wave
@@ -202,7 +203,9 @@ We can get a better estimate from the migration matrix itself;
 seed.sigmas <- dispersal_distance(demog$seed.migration$M,pop)
 pollen.sigmas <- dispersal_distance(demog$pollen.migration$M,pop)
 mean.sigma <- (mean(seed.sigmas)+mean(pollen.sigmas))/2
-c(empirical=mean.sigma,naive=(demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)
+c(
+  empirical=mean.sigma,
+  naive=(demog$pollen.migration$sigma+demog$seed.migration$sigma)/2 )
 layout(t(1:2))
 pl(seed.sigmas,main="sigma for seeds")
 pl(pollen.sigmas,main="sigma for pollen")
@@ -213,7 +216,7 @@ Using this value, we have
 ```{r compare}
 s <- (germination.args$s-1)
 ctab <- data.frame(
-           speed = c( expected = mean.sigma * sqrt(2*s) ,
+           speed = c( expected = 2 * mean.sigma * sqrt(s) / (1-demog$prob.survival),
                       observed = AA.speed ),
            width = c( expected = 2 * mean.sigma / sqrt(s) ,
                       observed = est.widths[2] ) )
