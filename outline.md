@@ -157,4 +157,4 @@ or perhaps the outcome of the previous local simulations.
 **Notes:**
 
 1.  Code the range as 1 for habitable, 0 for accessible but inhabitable, and NA for inaccessible.
-
+2.  The density of heterozygotes says where an expanding wave is and the strength of local drift.

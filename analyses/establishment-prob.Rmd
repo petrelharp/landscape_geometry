@@ -8,10 +8,12 @@ date: "`r Sys.Date()`"
 
 ```{r doc_setup, include=FALSE}
 fig.dim <- 4
-knitr::opts_chunk$set(fig.width=3*fig.dim,fig.height=fig.dim,fig.align='center')
+knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
 library(Matrix)
 library(raster)
 library(rgeos)
+# library(gstat)
+library(parallel)
 devtools::load_all("../landsim")
 ```
 
@@ -24,16 +26,6 @@ habitat <- raster( file.path(layerdir,layername) )
 
 Here's the raster:
 ```{r show_habitat, fig.width=fig.dim}
-## Process the habitat:  THIS TAKES HELLA LONG
-# cats <- select_clumps(subs(habitat,data.frame(c(0,1),c(NA,1))),30e3)
-# habextent <- extent(trim(subs(cats,data.frame(by=1,which=1),subsWithNA=TRUE)))
-# habextent <- c( mean(habextent[1:2])+1.1*(habextent[1:2]-mean(habextent[1:2])), 
-#                 mean(habextent[3:4])+1.1*(habextent[3:4]-mean(habextent[3:4])) )
-# habextent <- c( max(habextent[1],extent(habitat)[1]),
-#                 min(habextent[2],extent(habitat)[2]),
-#                 max(habextent[3],extent(habitat)[3]),
-#                 min(habextent[4],extent(habitat)[4]) )
-# habitat <- crop( habitat, extent( 
 cropbox <- extent( c(
             xmin        = -2093993,
             xmax        = -1849272,
@@ -56,12 +48,13 @@ we'll:
 
 First we need a demographic set-up.
 ```{r demog_setup}
+carrying.capacity <- 10
 pop <- population( 
                   habitat = habitat,
-                  accessible=!is.na(values(habitat)),
-                  habitable=(!is.na(values(habitat)) & values(habitat)>0),
+                  accessible = !is.na(values(habitat)),
+                  habitable = (!is.na(values(habitat)) & values(habitat)>0),
                   genotypes = c("aa","aA","AA"),
-                  N = cbind( aa=rpois_raster(carrying.capacity,only.values=TRUE),
+                  N = cbind( aa=rpois_raster(carrying.capacity*mask(habitat,habitat,maskvalue=0),only.values=TRUE),
                              aA=0, 
                              AA=0 )
              )
@@ -69,7 +62,7 @@ pop <- population(
 germination.args <- list( 
              r0 = 0.01,  # one in ten seeds will germinate at low densities
              s = 1.5,    # multiplicative selective benefit of the A allele
-             carrying.capacity = 100, 
+             carrying.capacity = carrying.capacity, 
              competition = migration(
                                      kern="gaussian",
                                      sigma=100,
@@ -84,7 +77,7 @@ germination_fun <- function (N, ...) {
     return( cbind( aa=out, aA=germination.args$s*out, AA=germination.args$s^2*out ) )
 }
 
-this.demography <- demography(
+demog <- demography(
         prob.seed = 0.2,
         fecundity = 100,
         prob.germination = germination_fun,
@@ -114,10 +107,18 @@ this.demography <- demography(
 # Sample mutation locations
 
 We choose locations by picking 200 random locations in the habitat,
-and picking a maximal set of these so that their surrounding 10km circles
+and picking a maximal set of these so that their surrounding (circular) neighborhoods
 do not overlap.
-```{r sample_muts}
-nhoods <- sample_neighborhoods( subs(habitat,data.frame(1,1)), n=200, radius=10*res(habitat) )
+The *A* allele has advantage `r germination.args$s-1`,
+so if it has not died out, after 10 generations, it should be present in about `r floor(germination.args$s^10)` copies
+(excluding the effects of population structure).
+The mean migration distance is about `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)` meters,
+so in that time it will have spread by at most `r 10*floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s))` meters.
+We'll set the radii of the neighborhoods to be that value.
+```{r sample_muts, fig.width=fig.dim}
+nhood.radius <- 10*((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s))
+nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
+                       radius=nhood.radius, separation=2*nhood.radius )
 plot(habitat)
 points(nhoods$centers,pch="*",cex=2)
 lines(nhoods$neighborhoods)
@@ -125,11 +126,22 @@ lines(nhoods$neighborhoods)
 
 # Initiate mutations
 
-Now, we'll set each location to have one mutation.
-```{r set_muts}
-pop <- set_N( pop, 1, i=nhoods$center.cells, j="aA" )
+First, we'll set each location to have one mutation.
+```{r set_muts, fig.width=1.5*fig.dim, fig.height=1.5*fig.dim}
+pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+         value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
 colSums(pop$N)
+# check this assigned correctly
+nonz <- xyFromCell(pop$habitat,which(pop$habitable)[pop$N[,"aA"]>0],sp=TRUE)
+plot(pop$habitat)
+points(nonz,pch=20,col='red')
+lines(nhoods$neighborhoods)
 ```
+
+*Note:* an alternate strategy would be to extract out each neighborhood,
+and simulate on these in isolation.
+This might be quicker, but runs into difficulty when thinking about how to deal with nonlocal effects,
+like competition between individuals in nearby cells.
 
 
 # Simulate forwards
@@ -137,17 +149,63 @@ colSums(pop$N)
 Now we need to run it forwards some generations,
 and record the numbers of *A* alleles in each neighborhood.
 ```{r sim_muts}
-plot.times <- seq(0,100,length.out=11)
-sim <- simulate( pop, this.demography, times=plot.times, 
-                summaries=c( census_neighborhoods( pop, nhoods ),  
-                            list( totals=function(x){colSums(x$N)} ) )
-            )
-plot(sim_to_brick(sim,pop)[["aA"]])
+plot.times <- seq(0,100,length.out=21)
+sim <- simulate( pop, demog, times=plot.times, 
+                 summaries=c( census_neighborhoods( pop, nhoods ),  
+                            list( totals=function(N){colSums(N)} ) ) )
 ```
 
-Here's the numbers of *aA* and *AA* genotypes in each neighborhood:
-```{r show_mut_growth, fig.width=fig.dim}
-matplot(sim$summaries$aA,type='l',lty=1)
-matlines(sim$summaries$AA,type='l',lty=2)
+Here's the numbers of *aA* and *AA* genotypes in each neighborhood.
+We want to see good separation between those that have died out and those that haven't.
+```{r show_mut_growth}
+layout(t(1:2))
+matplot(1+sim$summaries$aA,type='l',lty=1,main="aA counts per neighborhood",log='y')
+matplot(1+sim$summaries$AA,type='l',lty=2,main="AA counts per neighborhood",log='y')
 ```
 
+Here's the final result, after `r sim$t` generations,
+with 
+```{r show_muts, fig.width=1.5*fig.dim, fig.height=1.5*fig.dim}
+nonz <- xyFromCell(pop$habitat,which(pop$habitable)[sim$N[,"aA",length(plot.times)]+sim$N[,"AA",length(plot.times)]>0],sp=TRUE)
+established <- ( (sim$summaries[["aA"]]+sim$summaries[["AA"]])[nrow(sim$summaries[["aA"]]),] > 0 )
+plot(pop$habitat)
+points(nonz,pch=20,col='red',cex=0.5)
+lines( nhoods$neighborhoods )
+plot( nhoods$neighborhoods[established], add=TRUE,
+     col=adjustcolor("red",0.25) )
+```
+
+# Do this many times
+
+To get an estimate of the probabilty of establishment by location,
+we need to do this many times, in many locations.
+```{r many_muts}
+many.sims <- mclapply( 1:36, function (dummy) {
+        nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
+                               radius=nhood.radius, separation=2*nhood.radius )
+        pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+                 value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
+        sim <- simulate( pop, demog, times=c(1,50,100),
+                         summaries=c( census_neighborhoods( pop, nhoods ),  
+                                    list( totals=function(N){colSums(N)} ) ) )
+        return( list( centers=nhoods$centers, summaries=sim$summaries ) )
+     }, mc.cores=detectCores() )
+sim.results <- list( centers = SpatialPoints( do.call(rbind,lapply(lapply(many.sims,"[[","centers"),coordinates)) ),
+                    established = do.call( c, lapply( many.sims, function (ms)
+                       {( (ms$summaries[["aA"]]+ms$summaries[["AA"]])[nrow(ms$summaries[["aA"]]),] > 0 )} ) )
+                    )
+```
+
+As a result, we have a set of initial locations
+and a binary variable (whether or not they established).
+```{r interp_prob, fig.height=1.5*fig.dim, fig.width=1.5*fig.dim}
+plot( pop$habitat )
+points(sim.results$centers,pch=20,col=1+sim.results$established)
+```
+
+The overall probability of establishment is `r mean(sim.results$established)`.
+
+Here's the raw results:
+```{r results}
+jsonlite::toJSON( cbind( coordinates(sim.results$centers), sim.results$established ) )
+```

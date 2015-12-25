@@ -1,0 +1,147 @@
+---
+title: "Estimating the speed of expansion."
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 4
+knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
+library(Matrix)
+library(raster)
+library(rgeos)
+# library(gstat)
+library(parallel)
+devtools::load_all("../landsim")
+```
+
+```{r setup}
+layerdir <- "../layers/Mojavset/Spatial/targets/biodiversity/binary"
+layername <- "Eschscholzia_minutiflora_ssp_twisselmannii_broad_extent_avg.tif"
+# habitats are listed with 0=absence, 1=presence.
+habitat <- raster( file.path(layerdir,layername) )
+```
+
+Here's the raster:
+```{r show_habitat, fig.width=fig.dim}
+cropbox <- extent( c(
+            xmin        = -2093993,
+            xmax        = -1849272,
+            ymin        =  1468496,
+            ymax        =  1663602 ))
+plot(habitat,main=layername)
+# lines( cropbox )
+habitat <- crop( habitat, cropbox )
+```
+
+To estimate the speed of expansion,
+we'll: 
+
+1.  Select a location to initiate a mutation, and place a mutation there,
+2.  Run a simulation forwards a few generations to check for establishment,
+3.  Plot total numbers and radius.
+
+# Demography
+
+First we need a demographic set-up.
+```{r demog_setup}
+carrying.capacity <- 10
+pop <- population( 
+                  habitat = habitat,
+                  accessible = !is.na(values(habitat)),
+                  habitable = (!is.na(values(habitat)) & values(habitat)>0),
+                  genotypes = c("aa","aA","AA"),
+                  N = cbind( aa=rpois_raster(carrying.capacity*mask(habitat,habitat,maskvalue=0),only.values=TRUE),
+                             aA=0, 
+                             AA=0 )
+             )
+
+germination.args <- list( 
+             r0 = 0.01,  # one in ten seeds will germinate at low densities
+             s = 1.5,    # multiplicative selective benefit of the A allele
+             carrying.capacity = carrying.capacity, 
+             competition = migration(
+                                     kern="gaussian",
+                                     sigma=100,
+                                     radius=300,
+                                     normalize=1,
+                                     do.M=TRUE,
+                                     population=pop
+                                 )
+         )
+germination_fun <- function (N, ...) {
+    out <- germination.args$r0 / ( 1 + migrate(germination.args$competition,x=rowSums(N))/germination.args$carrying.capacity )
+    return( cbind( aa=out, aA=germination.args$s*out, AA=germination.args$s^2*out ) )
+}
+
+demog <- demography(
+        prob.seed = 0.2,
+        fecundity = 100,
+        prob.germination = germination_fun,
+        prob.survival = 0.9,
+        pollen.migration = migration(
+                            kern = function (x) { exp(-sqrt(x)) },
+                            sigma = 300,
+                            radius = 1200,
+                            normalize = NULL,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        seed.migration = migration(
+                            kern = "gaussian",
+                            sigma = 100,
+                            radius = 1200,
+                            normalize = 1,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        genotypes = c("aa","aA","AA"),
+        mating = mating_tensor( c("aa","aA","AA") )
+    )
+```
+
+# Initiate mutations
+
+We'll choose a location for a single mutation.
+```{r init_muts, fig.width=fig.dim}
+mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
+mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
+plot(pop$habitat)
+points(mutloc$center,pch="*",col='red')
+```
+
+# Simulate, check for establishment
+
+We'll place the single mutation, run it forwards for 100 generations, and if it hasn't established, try again.
+```{r sim_muts}
+for (ntries in 1:100) {
+    pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+             value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
+    sim <- simulate( pop, demog, times=100,
+                     summaries= list( totals=function(N){colSums(N)} ) )
+    total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
+    cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")
+    if ( total.aA>0 ) { break }
+}
+```
+
+# Run longer 
+
+Now, we'll run it for longer.
+```{r run_longer}
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=99),
+                 summaries= list( totals=function(N){colSums(N)} ) )
+matplot( sim$summaries[[1]], type='l', lty=1 )
+legend("topright",lty=1,col=1:3,legend=pop$genotypes)
+```
+
+```{r anim_run, fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
+pl <- function (x,...) { hab <- do.call(stack,list(habitat)[rep(1,NCOL(x))]); values(hab)[pop$habitable] <- x; plot(hab,nr=1,...) }
+for (i in seq_along(sim$times)) {
+    pl( sim$N[,,i], main=paste(pop$genotypes,c("",sprintf("t=%d",floor(sim$times[i])),"")), zlim=range(sim$N) )
+}
+```
+
+# Extract summaries
