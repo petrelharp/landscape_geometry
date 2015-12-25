@@ -115,7 +115,7 @@ points(mutloc$center,pch="*",col='red')
 # Simulate, check for establishment
 
 We'll place the single mutation, run it forwards for 100 generations, and if it hasn't established, try again.
-```{r sim_muts}
+```{r sim_muts, cache=TRUE}
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
@@ -130,8 +130,8 @@ for (ntries in 1:100) {
 # Run longer 
 
 Now, we'll run it for longer.
-```{r run_longer}
-sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=99),
+```{r run_longer, cache=TRUE, depends="sim_muts"}
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=291),
                  summaries= list( totals=function(N){colSums(N)} ) )
 matplot( sim$summaries[[1]], type='l', lty=1 )
 legend("topright",lty=1,col=1:3,legend=pop$genotypes)
@@ -144,4 +144,79 @@ for (i in seq_along(sim$times)) {
 }
 ```
 
-# Extract summaries
+# Speed of expansion
+
+To get the speed of expansion
+we'll compare the spread to the minimum enclosing circle,
+for heterozygotes and for homozygotes.
+```{r expansion}
+dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
+max.dists <- sapply( pop$genotypes[-1], function (geno) {
+                    apply( sim$N[,match(geno,pop$genotypes),], 2, function (x) { if (any(x>0)) { max( dists[ x>0 ] ) } else { NA } } )
+                 } )
+AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
+AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
+AA.speed <- diff( max.dists[range(AA.usethese)] ) / diff( sim$times[range(AA.usethese)] )
+matplot(sim$times,max.dists,type='l',lty=1,xlab="generation")
+legend("bottomright",legend=pop$genotypes[-1],lty=1,col=1:2)
+abline(0,AA.speed)
+AA.speed
+```
+The wave is moving at about `r AA.speed` meters per generation;
+the *A* allele has advantage `r germination.args$s-1`;
+the mean migration distance is about `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)` meters;
+so the predicted speed is `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s-1))` meters per generation.
+
+
+# Width of the wave
+
+To compute the width of the wave,
+we'll look at two measures:
+
+1.  The difference between the furthest occurence of an *A* allele and the furthest location where *A* is at 50%;
+2.  The difference between the furthest occurence that *A* is at 25% and the furthest location it is at 75%.
+
+Here we compute these:
+```{r wave_width}
+A.freqs <- (sim$N[,2,]/2 + sim$N[,3,])/(sim$N[,1,] + sim$N[,2,] + sim$N[,3,])
+quant.dists <- cbind(
+                     max = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.5)) { max( dists[x>0], na.rm=TRUE ) - max( dists[x>0.5], na.rm=TRUE ) } else { NA } } ),
+                     iqr = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.75)) { max( dists[x>0.25], na.rm=TRUE ) - max( dists[x>0.75], na.rm=TRUE ) } else { NA } } )
+                 )
+est.widths <- colMeans(quant.dists[AA.usethese,],na.rm=TRUE)
+```
+
+These two methods, respectively, give estimates of
+`r est.widths[1]` and `r est.widths[2]` meters, respectively.
+Theory predicts this width should be $\sigma/\sqrt{s}$,
+which is in this case about
+`r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2/sqrt(germination.args$s-1))` meters.
+
+
+# Comparison to theory
+
+Simulation doesn't match up with theory so well above.
+But, we're using a naive estimate of the dispersal distance, $\sigma$.
+We can get a better estimate from the migration matrix itself;
+```{r empirical_sigma,fig.width=2*fig.dim}
+seed.sigmas <- dispersal_distance(demog$seed.migration$M,pop)
+pollen.sigmas <- dispersal_distance(demog$pollen.migration$M,pop)
+mean.sigma <- (mean(seed.sigmas)+mean(pollen.sigmas))/2
+c(empirical=mean.sigma,naive=(demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)
+layout(t(1:2))
+pl(seed.sigmas,main="sigma for seeds")
+pl(pollen.sigmas,main="sigma for pollen")
+```
+As expected, the value is `r floor(mean.sigma)` meters,
+substantially larger than the naive value of `r floor((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)` meters.
+Using this value, we have
+```{r compare}
+s <- (germination.args$s-1)
+ctab <- data.frame(
+           speed = c( expected = mean.sigma * sqrt(2*s) ,
+                      observed = AA.speed ),
+           width = c( expected = 2 * mean.sigma / sqrt(s) ,
+                      observed = est.widths[2] ) )
+floor(ctab)
+```
+

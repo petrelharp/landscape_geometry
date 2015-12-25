@@ -151,10 +151,15 @@ or perhaps the outcome of the previous local simulations.
 
 **Questions:**
 
-1.  Can measure distance intrinsically (within the set of accessible locations) or extrinsically (as the crow flies).
+1.  Should measure distance intrinsically (within the set of accessible locations) or extrinsically (as the crow flies)?
 
 
 **Notes:**
 
 1.  Code the range as 1 for habitable, 0 for accessible but inhabitable, and NA for inaccessible.
 2.  The density of heterozygotes says where an expanding wave is and the strength of local drift.
+
+**To-do:**
+
+1. Make a generic report applicable to an arbitrary demographic setup.
+2. Test this on flatspace and Sierpinski-ized habitats.
