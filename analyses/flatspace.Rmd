@@ -1,0 +1,213 @@
+---
+title: "Estimating the speed of expansion."
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 4
+knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
+library(Matrix)
+library(raster)
+library(rgeos)
+# library(gstat)
+library(parallel)
+devtools::load_all("../landsim")
+```
+
+
+Here is flatspace:
+```{r setup_layer}
+diam <- 10e3
+habitat <- raster(xmn=-diam, xmx=diam, ymn=-diam, ymx=diam, 
+      resolution=100,
+      crs="+proj=utm +zone=11 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+values(habitat) <- 20
+plot(habitat)
+```
+
+
+# Demography
+
+First we need a demographic set-up.
+```{r demog_setup}
+carrying.capacity <- 10
+pop <- population( 
+                  habitat = habitat,
+                  accessible = !is.na(values(habitat)),
+                  habitable = (!is.na(values(habitat)) & values(habitat)>0),
+                  genotypes = c("aa","aA","AA"),
+                  N = cbind( aa=rpois_raster(carrying.capacity*mask(habitat,habitat,maskvalue=0),only.values=TRUE),
+                             aA=0, 
+                             AA=0 )
+             )
+
+germination.args <- list( 
+             r0 = 0.01,  # one in ten seeds will germinate at low densities
+             s = 1.5,    # multiplicative selective benefit of the A allele
+             carrying.capacity = carrying.capacity, 
+             competition = migration(
+                                     kern="gaussian",
+                                     sigma=100,
+                                     radius=300,
+                                     normalize=1,
+                                     do.M=TRUE,
+                                     population=pop
+                                 )
+         )
+germination_fun <- function (N, ...) {
+    out <- germination.args$r0 / ( 1 + migrate(germination.args$competition,x=rowSums(N))/germination.args$carrying.capacity )
+    return( cbind( aa=out, aA=germination.args$s*out, AA=germination.args$s^2*out ) )
+}
+
+demog <- demography(
+        prob.seed = 0.2,
+        fecundity = 100,
+        prob.germination = germination_fun,
+        prob.survival = 0.9,
+        pollen.migration = migration(
+                            kern = function (x) { exp(-sqrt(x)) },
+                            sigma = 300,
+                            radius = 1200,
+                            normalize = NULL,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        seed.migration = migration(
+                            kern = "gaussian",
+                            sigma = 100,
+                            radius = 1200,
+                            normalize = 1,
+                            do.M=TRUE,
+                            population=pop
+                     ),
+        genotypes = c("aa","aA","AA"),
+        mating = mating_tensor( c("aa","aA","AA") )
+    )
+```
+
+# Speed of expansion
+
+
+Choose a location for a single mutation, and make sure it establishes:
+```{r init_muts, fig.width=fig.dim, cache=TRUE}
+mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
+mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
+for (ntries in 1:100) {
+    pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+             value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
+    sim <- simulate( pop, demog, times=100,
+                     summaries= list( totals=function(N){colSums(N)} ) )
+    total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
+    cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")
+    if ( total.aA>0 ) { break }
+}
+```
+
+Now, run longer:
+```{r run_longer, cache=TRUE, depends="init_muts", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=291),
+                 summaries= list( totals=function(N){colSums(N)} ) )
+pl <- function (x,...) { hab <- do.call(stack,list(habitat)[rep(1,NCOL(x))]); values(hab)[pop$habitable] <- x; plot(hab,nr=1,...) }
+for (i in seq_along(sim$times)) {
+    pl( sim$N[,,i], main=paste(pop$genotypes,c("",sprintf("t=%d",floor(sim$times[i])),"")), zlim=range(sim$N) )
+}
+```
+
+## Speed of expansion
+
+To get the speed of expansion
+we'll compare the spread to the minimum enclosing circle,
+for heterozygotes and for homozygotes.
+```{r expansion}
+dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
+max.dists <- sapply( pop$genotypes[-1], function (geno) {
+                    apply( sim$N[,match(geno,pop$genotypes),], 2, function (x) { if (any(x>0)) { max( dists[ x>0 ] ) } else { NA } } )
+                 } )
+AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
+AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
+AA.speed <- diff( max.dists[range(AA.usethese)] ) / diff( sim$times[range(AA.usethese)] )
+matplot(sim$times,max.dists,type='l',lty=1,xlab="generation")
+legend("bottomright",legend=pop$genotypes[-1],lty=1,col=1:2)
+abline(0,AA.speed)
+AA.speed
+```
+
+
+## Width of the wave
+
+To compute the width of the wave,
+here is the difference between the furthest occurence that *A* is at 25% and the furthest location it is at 75%:
+```{r wave_width}
+A.freqs <- (sim$N[,2,]/2 + sim$N[,3,])/(sim$N[,1,] + sim$N[,2,] + sim$N[,3,])
+quant.dists <- cbind(
+                     max = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.5)) { max( dists[x>0], na.rm=TRUE ) - max( dists[x>0.5], na.rm=TRUE ) } else { NA } } ),
+                     iqr = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.75)) { max( dists[x>0.25], na.rm=TRUE ) - max( dists[x>0.75], na.rm=TRUE ) } else { NA } } )
+                 )
+est.widths <- colMeans(quant.dists[AA.usethese,],na.rm=TRUE)
+```
+
+
+## Comparison to theory
+
+Simulation doesn't match up with theory so well above.
+But, we're using a naive estimate of the dispersal distance, $\sigma$.
+We can get a better estimate from the migration matrix itself;
+```{r empirical_sigma,fig.width=2*fig.dim}
+seed.sigmas <- dispersal_distance(demog$seed.migration$M,pop)
+pollen.sigmas <- dispersal_distance(demog$pollen.migration$M,pop)
+mean.sigma <- (mean(seed.sigmas)+mean(pollen.sigmas))/2
+c(empirical=mean.sigma,naive=(demog$pollen.migration$sigma+demog$seed.migration$sigma)/2)
+layout(t(1:2))
+pl(seed.sigmas,main="sigma for seeds")
+pl(pollen.sigmas,main="sigma for pollen")
+s <- (germination.args$s-1)
+ctab <- data.frame(
+           speed = c( expected = 2 * mean.sigma * sqrt(s) ,
+                      observed = AA.speed ),
+           width = c( expected = 2 * mean.sigma / sqrt(s) ,
+                      observed = est.widths[2] ) )
+floor(ctab)
+```
+
+
+# Probability of Establishment
+
+## Sample mutation locations
+
+
+Sample and initiate mutations:
+```{r sample_muts, fig.width=fig.dim}
+nhood.radius <- 5*((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(germination.args$s-1))
+many.sims <- mclapply( 1:36, function (dummy) {
+        nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
+                               radius=nhood.radius, separation=2*nhood.radius )
+        pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+                 value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
+        sim <- simulate( pop, demog, times=c(1,50,100),
+                         summaries=c( census_neighborhoods( pop, nhoods ),  
+                                    list( totals=function(N){colSums(N)} ) ) )
+        return( list( centers=nhoods$centers, summaries=sim$summaries ) )
+     }, mc.cores=detectCores() )
+sim.results <- list( centers = SpatialPoints( do.call(rbind,lapply(lapply(many.sims,"[[","centers"),coordinates)) ),
+                    established = do.call( c, lapply( many.sims, function (ms)
+                       {( (ms$summaries[["aA"]]+ms$summaries[["AA"]])[nrow(ms$summaries[["aA"]]),] > 0 )} ) )
+                    )
+```
+
+As a result, we have a set of initial locations
+and a binary variable (whether or not they established).
+```{r interp_prob, fig.height=1.5*fig.dim, fig.width=1.5*fig.dim}
+plot( pop$habitat )
+points(sim.results$centers,pch=20,col=1+sim.results$established)
+```
+
+The overall probability of establishment is `r mean(sim.results$established)`.
+
+Here's the raw results:
+```{r results}
+jsonlite::toJSON( cbind( coordinates(sim.results$centers), sim.results$established ) )
+```
+
