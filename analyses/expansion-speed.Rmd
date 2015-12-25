@@ -105,7 +105,7 @@ demog <- demography(
 # Initiate mutations
 
 We'll choose a location for a single mutation.
-```{r init_muts, fig.width=fig.dim}
+```{r init_muts, cache=TRUE, fig.width=fig.dim}
 mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
 mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
 plot(pop$habitat)
@@ -115,7 +115,7 @@ points(mutloc$center,pch="*",col='red')
 # Simulate, check for establishment
 
 We'll place the single mutation, run it forwards for 100 generations, and if it hasn't established, try again.
-```{r sim_muts, cache=TRUE}
+```{r sim_muts, cache=TRUE, depends="init_muts"}
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
@@ -174,8 +174,8 @@ so the predicted speed is `r floor((demog$pollen.migration$sigma+demog$seed.migr
 To compute the width of the wave,
 we'll look at two measures:
 
-1.  The difference between the furthest occurence of an *A* allele and the furthest location where *A* is at 50%;
-2.  The difference between the furthest occurence that *A* is at 25% and the furthest location it is at 75%.
+1.  The difference between the furthest occurrence of an *A* allele and the furthest location where *A* is at 50%;
+2.  The difference between the furthest occurrence that *A* is at 25% and the furthest location it is at 75%.
 
 Here we compute these:
 ```{r wave_width}
