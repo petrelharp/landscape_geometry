@@ -163,3 +163,4 @@ or perhaps the outcome of the previous local simulations.
 
 1. Make a generic report applicable to an arbitrary demographic setup.
 2. Test this on flatspace and Sierpinski-ized habitats.
+3. Allow habitable and accessible to be migration-specific rather than population-specific (as functions?).
