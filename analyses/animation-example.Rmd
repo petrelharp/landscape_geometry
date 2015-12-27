@@ -1,10 +1,50 @@
+Bouncing balls:
 ```{r test_animate, fig.show="animate", aniopts="controls", interval=0.1}
 xy <- data.frame(x=rnorm(100),y=rnorm(100))
 xlims <- range(xy$x)
 ylims <- range(xy$y)
 for (k in 1:100) {
     plot( xy, xlim=xlims, ylim=ylims, main=k, col=rainbow(nrow(xy)), pch=20 )
-    xy$x <- xy$x + rnorm(nrow(xy))/10
-    xy$y <- xy$y + rnorm(nrow(xy))/10
+    xy$x <- xy$x + rnorm(nrow(xy))/40
+    xy$y <- xy$y + rnorm(nrow(xy))/40
+}
+```
+
+Same thing, with `layout()`:
+```{r test_animate_2, fig.show="animate", aniopts="controls", interval=0.1, fig.width=12}
+xy <- data.frame(x=rnorm(100),y=rnorm(100))
+xlims <- range(xy$x)
+ylims <- range(xy$y)
+layout(t(1:2))
+for (k in 1:100) {
+    plot( xy, xlim=xlims, ylim=ylims, main=k, col=rainbow(nrow(xy)), pch=20 )
+    plot( xy[,2:1], xlim=ylims, ylim=xlims, main=k, col=rainbow(nrow(xy)), pch=20 )
+    xy$x <- xy$x + rnorm(nrow(xy))/40
+    xy$y <- xy$y + rnorm(nrow(xy))/40
+}
+```
+
+Animated rasters:
+```{r test_animate_raster, fig.show="animate", aniopts="controls", interval=0.1}
+library(raster)
+devtools::load_all("../landsim")
+habitat <- random_habitat()
+habvals <- matrix( values(habitat), nrow=ncell(habitat), ncol=40 )
+for (k in 2:ncol(habvals)) {
+    habvals[,k] <- pmax(0,habvals[,k-1]+rnorm(ncell(habitat))*2)
+}
+for (k in 1:ncol(habvals)) {
+    values(habitat) <- habvals[,k]
+    plot( habitat,zlim=range(habvals,finite=TRUE) )
+}
+```
+
+With `layout()`:
+```{r test_animate_raster_2, fig.show="animate", aniopts="controls", interval=0.1, fig.width=12}
+layout(t(1:2))
+for (k in 1:ncol(habvals)) {
+    values(habitat) <- habvals[,k]
+    plot( habitat,zlim=range(habvals,finite=TRUE) )
+    plot( t(habitat),zlim=range(habvals,finite=TRUE) )
 }
 ```
