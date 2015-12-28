@@ -1,5 +1,9 @@
+require(raster)
+require(landsim)
+
+seedish <- floor(1e6*runif(1))
+# reproducible landscape
 set.seed(42)
-devtools::load_all("../../landsim")
 
 habitat <- random_habitat()
 carrying.capacity <- values(habitat)[(!is.na(values(habitat)) & values(habitat)>0)]
@@ -19,3 +23,5 @@ random_landscape.R :
 "
              )
 
+# restore randomness, hopefully
+set.seed(seedish)

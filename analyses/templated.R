@@ -1,4 +1,4 @@
-#!env Rscript
+#!/usr/bin/Rscript
 
 usage <- "
 Compile a templated analysis:
@@ -81,6 +81,8 @@ run_template <- function ( template,
 }
 
 args <- if (interactive()) { args } else { commandArgs(TRUE) }
+if (length(args)<2) { stop(usage) }
+
 output.file <- args[1]
 
 for (scr in args[-1]) {

@@ -12,7 +12,7 @@ library(Matrix)
 library(raster)
 library(rgeos)
 library(parallel)
-devtools::load_all("../landsim")
+library(landsim)
 ```
 
 
@@ -35,7 +35,7 @@ and are expected to end up with one individual in the other cell.
 
 ```{r load_raster, fig.width=fig.dim}
 x <- y <- raster("Mojavset/Spatial/targets/biodiversity/binary/Yucca_brevifolia_broad_extent_avg.tif")
-ngen <- 5
+ngen <- 2
 N <- 1000
 migr <- migration( kern="gaussian", sigma=200, radius=1000, normalize=1/ngen )
 for (k in 1:ceiling(log(1e-8)/log(1/ngen))) {
@@ -53,4 +53,12 @@ Here are the resulting clusters:
 z <- mask(y.clumps,x,maskvalue=0)
 plot(z,col=rainbow(length(unique(values(z)))))
 round(table(values(z))/sum(!is.na(values(z))),2)
+```
+
+Restrict to the biggest clusters that make up 95% of the habitat:
+```{r remove_clusters}
+clump.sizes <- sort( table(values(z))/sum(!is.na(values(z))), decreasing=FALSE )
+big.clumps <- as.numeric( names( clump.sizes )[ cumsum(clump.sizes) > 0.05 ] )
+values(z)[!values(z) %in% big.clumps] <- NA
+plot(z)
 ```
