@@ -7,7 +7,7 @@ Compile a templated analysis:
 
 The scripts to source should define a population and a demography object.  Example:
 
-    Rscript templated.R tests/template_test/test.html habitats/random_landscape.R demographies/gaussian-weibull.R
+    Rscript templated.R tests/template_test/test.html habitats/test_habitat.R demographies/test_demography.R
 "
 
 .pandoc.opts <-  function (resource.dir, 
