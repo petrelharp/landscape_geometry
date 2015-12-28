@@ -1,0 +1,56 @@
+---
+title: "Trimming an Input Raster"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 4
+knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
+library(Matrix)
+library(raster)
+library(rgeos)
+library(parallel)
+devtools::load_all("../landsim")
+```
+
+
+The problem at hand is given a raster of predicted habitat,
+to pull out a sufficiently contiguous chunk,
+trimming out possibly tiny, isolated pieces.
+In the process, we can get statistics about how isolated different pieces are.
+
+To do this:
+
+1.  Pick a number of generations, $t$, and a number of individuals, $N$.
+2.  Begin with mass 1 at each raster in the habitat, and mass 0 elsewhere.
+3.  Migrate this mass forwards by a Geometric($1/t$) number of generations.
+4.  Threshold all cells by $1/N$ and find the connected components in the result.
+
+This is motivated by saying that two cells are in the same cluster if 
+we start with $N$ individuals in one cell,
+step these forwards by $t$ migration steps,
+and are expected to end up with one individual in the other cell.
+
+```{r load_raster, fig.width=fig.dim}
+x <- y <- raster("Mojavset/Spatial/targets/biodiversity/binary/Yucca_brevifolia_broad_extent_avg.tif")
+ngen <- 5
+N <- 1000
+migr <- migration( kern="gaussian", sigma=200, radius=1000, normalize=1/ngen )
+for (k in 1:ceiling(log(1e-8)/log(1/ngen))) {
+    y <- y + migrate_raster(y,migr) 
+}
+y <- (1-1/ngen)*y
+values(y)[values(y)<1/N] <- NA
+y.clumps <- clump( y )
+plot(y.clumps)
+plot(mask(x,x,maskvalue=0),add=TRUE,col='red')
+```
+
+Here are the resulting clusters:
+```{r show_clusters}
+z <- mask(y.clumps,x,maskvalue=0)
+plot(z,col=rainbow(length(unique(values(z)))))
+round(table(values(z))/sum(!is.na(values(z))),2)
+```

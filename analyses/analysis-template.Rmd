@@ -1,94 +1,56 @@
 ---
-title: "Summaries, on flatspace"
+title: "Templated analysis"
 author: "Peter Ralph"
 date: "`r Sys.Date()`"
 ---
 
 
-
 ```{r doc_setup, include=FALSE}
 fig.dim <- 4
-knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
+knitr::opts_chunk$set(
+              fig.width=2*fig.dim,
+              fig.height=fig.dim,
+              fig.align='center',
+              error=FALSE )
 library(Matrix)
 library(raster)
 library(rgeos)
-# library(gstat)
 library(parallel)
 devtools::load_all("../landsim")
 ```
 
-
-Here is flatspace:
-```{r setup_layer}
-diam <- 10e3
-habitat <- raster(xmn=-diam, xmx=diam, ymn=-diam, ymx=diam, 
-      resolution=100,
-      crs="+proj=utm +zone=11 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
-values(habitat) <- 20
-plot(habitat)
+```{r analysis_setup, echo=FALSE}
+required <- c("pop","demog")
+usage <- " \
+Before rendering this file, the following must be defined:
+    pop : a population object \
+    demog : a demography object \
+but they can't be found.
+"
+if ( !all(sapply(required,exists)) ) { stop(usage) }
+demog <- setup_demography( demog, pop )
 ```
 
+# Set-up:
 
-# Demography
+Here are the descriptions of the population and the demography:
 
-First we need a demographic set-up.
-```{r demog_setup}
-carrying.capacity <- 10
-pop <- population( 
-                  habitat = habitat,
-                  accessible = !is.na(values(habitat)),
-                  habitable = (!is.na(values(habitat)) & values(habitat)>0),
-                  genotypes = c("aa","aA","AA"),
-                  N = cbind( aa=rpois_raster(carrying.capacity*mask(habitat,habitat,maskvalue=0),only.values=TRUE),
-                             aA=0, 
-                             AA=0 )
-             )
+- **population**: `r (pop$description)`
+- **demography**: `r (demog$description)`
 
-germination_fun <- vital( 
-         function (N, ...) {
-             out <- r0 / ( 1 + migrate(competition,x=rowSums(N))/carrying.capacity )
-             return( cbind( aa=out, aA=s*out, AA=s^2*out ) )
-         },
-         r0 = 0.01,  # one in ten seeds will germinate at low densities
-         s = 1.5,    # multiplicative selective benefit of the A allele
-         carrying.capacity = carrying.capacity, 
-         competition = migration(
-                                 kern="gaussian",
-                                 sigma=100,
-                                 radius=300,
-                                 normalize=1,
-                                 do.M=TRUE,
-                                 population=pop
-                             )
-     )
-
-demog <- demography(
-        prob.seed = 0.2,
-        fecundity = 100,
-        prob.germination = germination_fun,
-        prob.survival = 0.9,
-        pollen.migration = migration(
-                            kern = function (x) { exp(-sqrt(x)) },
-                            sigma = 300,
-                            radius = 1200,
-                            normalize = NULL,
-                            do.M=TRUE,
-                            population=pop
-                     ),
-        seed.migration = migration(
-                            kern = "gaussian",
-                            sigma = 100,
-                            radius = 1200,
-                            normalize = 1,
-                            do.M=TRUE,
-                            population=pop
-                     ),
-        genotypes = c("aa","aA","AA"),
-        mating = mating_tensor( c("aa","aA","AA") )
-    )
+Here is the habitat:
+```{r show_habitat, fig.width=3*fig.dim}
+layout(t(1:3))
+plot(pop$habitat,main="habitat")
+thab <- pop$habitat
+values(thab) <- ifelse( pop$accessible, 1, NA )
+plot(thab,main="accessible")
+thab <- pop$habitat
+values(thab) <- ifelse( pop$habitable, 1, NA )
+plot(thab,main="habitable")
 ```
 
-# Speed of expansion
+# Wave of adaptation
 
 
 Choose a location for a single mutation, and make sure it establishes:
@@ -101,9 +63,9 @@ for (ntries in 1:100) {
     sim <- simulate( pop, demog, times=seq(0,100,length.out=11),
                      summaries= list( totals=function(N){colSums(N)} ) )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
-    cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")
     if ( total.aA>0 ) { break }
 }
+if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 ```
 
 Now, run longer:
@@ -174,7 +136,7 @@ pl(seed.sigmas,main="sigma for seeds")
 pl(pollen.sigmas,main="sigma for pollen")
 s <- (demog$prob.germination$s-1)
 ctab <- data.frame(
-           speed = c( expected = 2 * mean.sigma * sqrt(s) / (1-demog$prob.survival) ,
+           speed = c( expected = 2 * mean.sigma * sqrt(s) * (1-demog$prob.survival) ,
                       observed = AA.speed ),
            width = c( expected = 2 * mean.sigma / sqrt(s) ,
                       observed = est.widths[2] ) )

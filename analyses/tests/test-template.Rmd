@@ -1,0 +1,16 @@
+---
+title: "Test template"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+This is a test of the `templated.R` command.
+
+This is being run in `r getwd()`.
+
+Here is some R:
+```{r test, cache=TRUE}
+x <- rnorm(20)
+y <- rnorm(20)
+plot(x,y)
+```

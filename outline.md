@@ -161,6 +161,42 @@ or perhaps the outcome of the previous local simulations.
 
 **To-do:**
 
-1. Make a generic report applicable to an arbitrary demographic setup.
-2. Test this on flatspace and Sierpinski-ized habitats.
-3. Allow habitable and accessible to be migration-specific rather than population-specific (as functions?).
+1.  Make a generic report applicable to an arbitrary demographic setup.
+2.  Test this on flatspace and Sierpinski-ized habitats.
+3.  Allow habitable and accessible to be migration-specific rather than population-specific (as functions of habitat values).
+4.  Implement other offspring number distributions.
+5.  Implement biased dispersal based on raster values.
+6.  Include pollen limitation.
+
+# Templated analyses
+
+## Combinations to analyze
+
+Rasters will cover about 200km on a side.
+At a resolution of 200m, this is $10^6$ cells;
+For instance, the *Yucca brevifolia* raster is 430 x 590 km, at 270m resolution;
+it has $3.5\times10^6$ cells, but only 200,000 nonzero cells.
+
+1.  Dispersal distance: long / short
+2.  Dispersal distribution: local / long-tailed
+3.  Dispersal: intrinsic / extrinsic
+4.  Habitat shape: 1D / treelike / netlike / holey / 2D
+5.  Population density: high / low
+6.  Reproduction: high / low variance
+
+
+## Set-up for the template
+
+In an analysis we need to specify:
+
+1.  A habitat raster and a portion of the raster to use.
+2.  Models of migration, including accessible portions of the raster.
+3.  Carrying capacity and other demographic details.
+
+
+We will then record:
+
+1.  Probability of establishment of a new mutation.
+2.  Speed and width of adaptive waves.
+3.  Dispersal distance, $\sigma$, computed from the migration matrix.
+4.  Total population size.
