@@ -56,6 +56,10 @@ The scripts to source should define a population and a demography object.  Examp
 #' @param macros Name of a file with LaTeX macros.
 #' @export
 #' @return The name of the output file.
+#' Note that by default, both knitr and pandoc look for figures relative to the *current directory*,
+#' not the directory that the markdown file lives in.  
+#' This makes subsequent parseing of the markdown file infeasable more difficult.
+#' To avoid this, here we switch to the directory of the markdown file before running either.
 run_template <- function ( template,
                            output,
                            html=grepl("html$",output),
@@ -64,20 +68,32 @@ run_template <- function ( template,
                            macros="macros.tex"
                        ) {
     thisdir <- getwd()
+    .fullpath <- function (x) { file.path(normalizePath("."),x) }
+    template.loc <- .fullpath(template)
+    output.loc <- .fullpath(output)
+    resource.dir.loc <- .fullpath(resource.dir)
+    macros.loc <- .fullpath(macros)
     md.dir <- dirname(md.file)
     dir.create(dirname(md.file),showWarnings=FALSE,recursive=TRUE)
     outbase <- gsub("[.][^.]*$","",basename(md.file))
-	knitr::opts_chunk$set(fig.path=file.path(md.dir,"figure",outbase,""),cache.path=file.path(md.dir,"cache",outbase,""))
+    # change directory so that paths are correct relative to where the markdown file is
     cat("## templated.R:\n")
-    cat(paste("knitr::knit('",template,"',output='",md.file,"')\n",sep=''))
-    knitr::knit(template,output=md.file)
+    cat(paste("setwd('",md.dir,"')\n"),sep='')
+    cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,",''), cache.path=file.path('cache',",outbase,",'') )",sep=''))
+    cat(paste("knitr::knit('",template.loc,"',output='",basename(md.file),"')\n",sep=''))
+    setwd(md.dir)
+	knitr::opts_chunk$set( fig.path=file.path("figure",outbase,""),
+                           cache.path=file.path("cache",outbase,"") )
+    knitr::knit(template.loc,output=basename(md.file))
     if (html) {
         dir.create(dirname(output),showWarnings=FALSE,recursive=TRUE)
         cat("Using pandoc to write html output to", output, "\n")
-        cat("pandoc", args=c( md.file, .pandoc.opts(resource.dir,macros=macros), paste("--output", output) ),"\n" )
-        system2( "pandoc", args=c( md.file, .pandoc.opts(resource.dir,macros=macros), paste("--output", output) ) )
+        cat("pandoc", c( basename(md.file), .pandoc.opts(resource.dir.loc,macros=macros.loc), paste("--output", output.loc) ),"\n" )
+        system2( "pandoc", args=c( basename(md.file), .pandoc.opts(resource.dir.loc,macros=macros.loc), paste("--output", output.loc) ) )
     }
-    return(output)
+    # change back
+    setwd(thisdir)
+    return(output.loc)
 }
 
 args <- if (interactive()) { args } else { commandArgs(TRUE) }

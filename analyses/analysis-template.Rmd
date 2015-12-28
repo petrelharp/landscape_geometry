@@ -15,8 +15,11 @@ knitr::opts_chunk$set(
 library(Matrix)
 library(raster)
 library(rgeos)
-library(parallel)
 library(landsim)
+# library(parallel)
+# this.lapply <- function (...) { mclapply(...,mc.cores=detectCores() ) }
+# need to check for available memory, working in parallel.
+this.lapply <- lapply
 ```
 
 ```{r analysis_setup, echo=FALSE}
@@ -92,10 +95,12 @@ max.dists <- sapply( pop$genotypes[-1], function (geno) {
                  } )
 AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
 AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
-AA.speed <- diff( max.dists[range(AA.usethese)] ) / diff( sim$times[range(AA.usethese)] )
-matplot(sim$times,max.dists,type='l',lty=1,xlab="generation")
-legend("bottomright",legend=pop$genotypes[-1],lty=1,col=1:2)
-abline(0,AA.speed)
+AA.speed <- diff( max.dists[range(AA.usethese),"AA"] ) / diff( sim$times[range(AA.usethese)] )
+# plot:
+matplot( sim$times, max.dists, type='l', lty=1, xlab="generation")
+legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
+points(  sim$times[range(AA.usethese)], max.dists[range(AA.usethese),"AA"], pch=20, col='red' )
+abline( max.dists[min(AA.usethese),"AA"]-AA.speed*sim$times[min(AA.usethese)], AA.speed, col='red', lty=3 )
 AA.speed
 ```
 
@@ -152,7 +157,7 @@ floor(ctab)
 Sample and initiate mutations:
 ```{r sample_muts, fig.width=fig.dim}
 nhood.radius <- 5*((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(demog$prob.germination$s-1))
-many.sims <- mclapply( 1:36, function (dummy) {
+many.sims <- this.lapply( 1:36, function (dummy) {
         nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
                                radius=nhood.radius, separation=2*nhood.radius )
         pop <- set_N( pop, i=which(pop$habitable), j="aA", 
@@ -161,7 +166,7 @@ many.sims <- mclapply( 1:36, function (dummy) {
                          summaries=c( census_neighborhoods( pop, nhoods ),  
                                     list( totals=function(N){colSums(N)} ) ) )
         return( list( centers=nhoods$centers, summaries=sim$summaries ) )
-     }, mc.cores=detectCores() )
+     } )
 sim.results <- list( centers = SpatialPoints( do.call(rbind,lapply(lapply(many.sims,"[[","centers"),coordinates)) ),
                     established = do.call( c, lapply( many.sims, function (ms)
                        {( (ms$summaries[["aA"]]+ms$summaries[["AA"]])[nrow(ms$summaries[["aA"]]),] > 0 )} ) )
