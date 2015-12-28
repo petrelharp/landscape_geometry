@@ -18,7 +18,7 @@ demog <- demography(
              ),
         prob.survival = 0.9,
         pollen.migration = migration(
-                            kern = function (x) { exp(-sqrt(x))/sqrt(x) },
+                            kern = function (x) { exp(-sqrt(x)) },
                             sigma = 300,
                             radius = 1200,
                             normalize = NULL
@@ -35,7 +35,7 @@ demog <- demography(
 gaussian-weibull.R :
     - density-dependent population regulation via probability of germination
     - Gaussian seed dispersal
-    - Weibull pollen dispersal, with k=1/2
+    - exp-sqrt pollen dispersal
     - needs 'carrying.capacity' to be defined.
 "
     )
