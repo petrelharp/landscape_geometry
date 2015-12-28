@@ -119,7 +119,7 @@ We'll place the single mutation, run it forwards for 100 generations, and if it 
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
-    sim <- simulate( pop, demog, times=seq(0,100,length.out=11),
+    sim <- simulate_pop( pop, demog, times=seq(0,100,length.out=11),
                      summaries= list( totals=function(N){colSums(N)} ) )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     cat("Attempt ", ntries, ": total Aa is ", total.aA, "\n")

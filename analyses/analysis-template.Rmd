@@ -16,7 +16,7 @@ library(Matrix)
 library(raster)
 library(rgeos)
 library(parallel)
-devtools::load_all("../landsim")
+library(landsim)
 ```
 
 ```{r analysis_setup, echo=FALSE}
@@ -60,7 +60,7 @@ mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutlo
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
-    sim <- simulate( pop, demog, times=seq(0,100,length.out=11),
+    sim <- simulate_pop( pop, demog, times=seq(0,100,length.out=11),
                      summaries= list( totals=function(N){colSums(N)} ) )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     if ( total.aA>0 ) { break }
@@ -157,7 +157,7 @@ many.sims <- mclapply( 1:36, function (dummy) {
                                radius=nhood.radius, separation=2*nhood.radius )
         pop <- set_N( pop, i=which(pop$habitable), j="aA", 
                  value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
-        sim <- simulate( pop, demog, times=c(1,50,100),
+        sim <- simulate_pop( pop, demog, times=c(1,50,100),
                          summaries=c( census_neighborhoods( pop, nhoods ),  
                                     list( totals=function(N){colSums(N)} ) ) )
         return( list( centers=nhoods$centers, summaries=sim$summaries ) )
@@ -177,8 +177,12 @@ points(sim.results$centers,pch=20,col=1+sim.results$established)
 
 The overall probability of establishment is `r mean(sim.results$established)`.
 
-Here's the raw results:
+
+
+# Raw data:
+
+Here are the coordinates of mutations, along with whether they established, as a csv:
 ```{r results}
-jsonlite::toJSON( cbind( coordinates(sim.results$centers), sim.results$established ) )
+write.csv( cbind( coordinates(sim.results$centers), sim.results$established ), file="", row.names=FALSE )
 ```
 

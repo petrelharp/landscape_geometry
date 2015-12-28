@@ -150,7 +150,7 @@ Now we need to run it forwards some generations,
 and record the numbers of *A* alleles in each neighborhood.
 ```{r sim_muts}
 plot.times <- seq(0,100,length.out=21)
-sim <- simulate( pop, demog, times=plot.times, 
+sim <- simulate_pop( pop, demog, times=plot.times, 
                  summaries=c( census_neighborhoods( pop, nhoods ),  
                             list( totals=function(N){colSums(N)} ) ) )
 ```
@@ -185,7 +185,7 @@ many.sims <- mclapply( 1:36, function (dummy) {
                                radius=nhood.radius, separation=2*nhood.radius )
         pop <- set_N( pop, i=which(pop$habitable), j="aA", 
                  value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
-        sim <- simulate( pop, demog, times=c(1,50,100),
+        sim <- simulate_pop( pop, demog, times=c(1,50,100),
                          summaries=c( census_neighborhoods( pop, nhoods ),  
                                     list( totals=function(N){colSums(N)} ) ) )
         return( list( centers=nhoods$centers, summaries=sim$summaries ) )
