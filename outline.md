@@ -189,9 +189,9 @@ it has $3.5\times10^6$ cells, but only 200,000 nonzero cells.
 
 In an analysis we need to specify:
 
-1.  A habitat raster and a portion of the raster to use.
-2.  Models of migration, including accessible portions of the raster.
-3.  Carrying capacity and other demographic details.
+1.  A habitat raster and a portion of the raster to use. (in `habitats/`)
+2.  Carrying capacities and choice of accessible portions of the raster. (in `populations/`)
+2.  Models of migration and methods for population regulation. (in `demographies/`)
 
 
 We will then record:
@@ -200,3 +200,15 @@ We will then record:
 2.  Speed and width of adaptive waves.
 3.  Dispersal distance, $\sigma$, computed from the migration matrix.
 4.  Total population size.
+
+
+## Analyses done
+
+```
+for x in habitats/* 
+do 
+    y=$(echo $(basename $x) | sed -e 's/.R//') 
+    mkdir -p ${y}_reports/
+    ./templated.R ${y}_reports/${y}_gaussian-expsqrt.html $x demographies/gaussian-expsqrt.R 
+done
+```

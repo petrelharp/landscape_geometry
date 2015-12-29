@@ -28,22 +28,7 @@ if (FALSE) {
 }
 
 habitat <- raster(orig.outfile)
-carrying.capacity <- 5000 * prod(res(habitat))/270^2  # complete guess
-habitable <- (!is.na(values(habitat)) & values(habitat)>0)
-pop <- population( 
-                  habitat = habitat,
-                  accessible = !is.na(values(habitat)),
-                  habitable = habitable,
-                  genotypes = c("aa","aA","AA"),
-                  carrying.capacity = carrying.capacity,
-                  N = cbind( aa=rpois(sum(habitable),carrying.capacity),
-                             aA=0, 
-                             AA=0 ),
-                  description = "
+habitat.description <- "
 Xerospermophilus_mohavensis.R : 
     - from Xerospermophilus_mohavensis_broad_extent_avg.tif
-    - defines carrying.capacity to be 10 / 270^2 m^2  # complete guess
-    - only good habitat areas are accessible and habitable
 "
-             )
-

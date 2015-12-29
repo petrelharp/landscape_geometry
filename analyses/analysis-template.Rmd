@@ -91,17 +91,22 @@ for heterozygotes and for homozygotes.
 ```{r expansion}
 dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
 max.dists <- sapply( pop$genotypes[-1], function (geno) {
-                    apply( sim$N[,match(geno,pop$genotypes),], 2, function (x) { if (any(x>0)) { max( dists[ x>0 ] ) } else { NA } } )
+                    apply( sim$N[,match(geno,pop$genotypes),], 2, 
+                          function (x) { if (any(x>0)) { max( dists[ x>0 ] ) } else { NA } } )
                  } )
-AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
-AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
-AA.speed <- diff( max.dists[range(AA.usethese),"AA"] ) / diff( sim$times[range(AA.usethese)] )
 # plot:
 matplot( sim$times, max.dists, type='l', lty=1, xlab="generation")
 legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
-points(  sim$times[range(AA.usethese)], max.dists[range(AA.usethese),"AA"], pch=20, col='red' )
-abline( max.dists[min(AA.usethese),"AA"]-AA.speed*sim$times[min(AA.usethese)], AA.speed, col='red', lty=3 )
-AA.speed
+if (any(!is.na(max.dists[,"AA"]))) {
+    AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
+    AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
+    AA.speed <- diff( max.dists[range(AA.usethese),"AA"] ) / diff( sim$times[range(AA.usethese)] )
+    points(  sim$times[range(AA.usethese)], max.dists[range(AA.usethese),"AA"], pch=20, col='red' )
+    abline( max.dists[min(AA.usethese),"AA"]-AA.speed*sim$times[min(AA.usethese)], AA.speed, col='red', lty=3 )
+    AA.speed
+} else {
+    AA.speed <- NA
+}
 ```
 
 
