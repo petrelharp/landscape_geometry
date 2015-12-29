@@ -23,10 +23,12 @@ else
 	PANDOC_PDF_OPTS += -H $(LATEX_MACROS)
 endif
 
-
+# webm output for ffmpeg broken atm
+# note comma at the front
+KNIT_OPTS = animation.fun=function (x, options) { hook_ffmpeg(x, options, '.mp4') }
 
 %.md : %.Rmd
-	cd $(dir $<) && Rscript -e 'knitr::opts_chunk$$set(fig.path=file.path("figure","$*",""),cache.path=file.path("cache","$*",""));knitr::knit(basename("$<"),output=basename("$@"))'
+	cd $(dir $<) && Rscript -e 'knitr::opts_chunk$$set(fig.path=file.path("figure","$*",""),cache.path=file.path("cache","$*",""));knitr::opts_knit$$set($(KNITR_OPTS));knitr::knit(basename("$<"),output=basename("$@"))'
 
 %.html : %.md
 	cd $(dir $<) && pandoc $(notdir $<) $(PANDOC_HTML_OPTS) --output $(notdir $@)
