@@ -120,7 +120,7 @@ quant.dists <- cbind(
                      max = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.5)) { max( dists[x>0], na.rm=TRUE ) - max( dists[x>0.5], na.rm=TRUE ) } else { NA } } ),
                      iqr = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.75)) { max( dists[x>0.25], na.rm=TRUE ) - max( dists[x>0.75], na.rm=TRUE ) } else { NA } } )
                  )
-est.widths <- colMeans(quant.dists[AA.usethese,],na.rm=TRUE)
+est.widths <- colMeans(quant.dists[AA.usethese,,drop=FALSE],na.rm=TRUE)
 ```
 
 
