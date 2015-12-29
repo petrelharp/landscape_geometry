@@ -18,8 +18,8 @@ devtools::load_all("../landsim")
 ```
 
 ```{r setup}
-layerdir <- "../layers/Mojavset/Spatial/targets/biodiversity/binary"
-layername <- "Eschscholzia_minutiflora_ssp_twisselmannii_broad_extent_avg.tif"
+layerdir <- "../layers/cleaned"
+layername <- "Eschscholzia_minutiflora_ssp_twisselmannii_broad_extent_avg_cleaned.tif"
 # habitats are listed with 0=absence, 1=presence.
 habitat <- raster( file.path(layerdir,layername) )
 ```

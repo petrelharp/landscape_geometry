@@ -1,3 +1,4 @@
+There may be a [bug in ffmpeg's webm output](https://trac.ffmpeg.org/ticket/5108); switching to [mp4 output](https://github.com/yihui/knitr/issues/712) fixes this:
 ```{r setup}
 knitr::opts_knit$set( animation.fun=function (x, options) { knitr:::hook_ffmpeg(x, options, ".mp4") } )
 ```
