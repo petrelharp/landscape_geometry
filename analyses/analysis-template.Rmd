@@ -64,7 +64,8 @@ for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
     sim <- simulate_pop( pop, demog, times=seq(0,100,length.out=11),
-                     summaries= list( totals=function(N){colSums(N)} ) )
+                     summaries= list( totals=function(N){colSums(N)} ),
+                     stop.fun=function(N){ sum(N)==0 } )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     if ( total.aA>0 ) { break }
 }
