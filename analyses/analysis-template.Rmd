@@ -97,7 +97,7 @@ max.dists <- sapply( pop$genotypes[-1], function (geno) {
 # plot:
 matplot( sim$times, max.dists, type='l', lty=1, xlab="generation")
 legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
-if (any(!is.na(max.dists[,"AA"]))) {
+if (length(setdiff(unique(max.dists[,"AA"]),NA))>1) {
     AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
     AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
     AA.speed <- diff( max.dists[range(AA.usethese),"AA"] ) / diff( sim$times[range(AA.usethese)] )

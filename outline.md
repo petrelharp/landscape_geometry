@@ -205,10 +205,10 @@ We will then record:
 ## Analyses done
 
 ```
-for x in habitats/* 
-do 
-    y=$(echo $(basename $x) | sed -e 's/.R//') 
-    mkdir -p ${y}_reports/
-    ./templated.R ${y}_reports/${y}_gaussian-expsqrt.html $x demographies/gaussian-expsqrt.R 
-done
+./templated.R test_habitat_reports/test_habitat_gaussian-expsqrt.html habitats/test_habitat.R demographies/gaussian-expsqrt.R
+./templated.R random_landscape_reports/random_landscape_gaussian-expsqrt.html habitats/random_landscape.R demographies/gaussian-expsqrt.R
+./templated.R Empidonax_traillii_extimus_reports/Empidonax_traillii_extimus_gaussian-expsqrt.html habitats/Empidonax_traillii_extimus.R populations/Empidonax_density.R demographies/gaussian-expsqrt.R
+./templated.R Eschscholzia_minutiflora_ssp_twisselmannii_reports/Eschscholzia_minutiflora_ssp_twisselmannii_gaussian-expsqrt.html habitats/Eschscholzia_minutiflora_ssp_twisselmannii.R populations/Eschscholzia_density.R demographies/gaussian-expsqrt.R
+./templated.R Xerospermophilus_mohavensis_reports/Xerospermophilus_mohavensis_gaussian-expsqrt.html habitats/Xerospermophilus_mohavensis.R populations/Xerospermophilus_density.R demographies/gaussian-expsqrt.R
+./templated.R Yucca_brevifolia_reports/Yucca_brevifolia_gaussian-expsqrt.html habitats/Yucca_brevifolia.R populations/Yucca_density.R demographies/gaussian-expsqrt.R
 ```

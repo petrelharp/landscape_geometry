@@ -78,8 +78,8 @@ run_template <- function ( template,
     outbase <- gsub("[.][^.]*$","",basename(md.file))
     # change directory so that paths are correct relative to where the markdown file is
     cat("## templated.R:\n")
-    cat(paste("setwd('",md.dir,"')\n"),sep='')
-    cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,",''), cache.path=file.path('cache',",outbase,",'') )",sep=''))
+    cat(paste("setwd('",md.dir,"')\n",sep=''))
+    cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,"',''), cache.path=file.path('cache','",outbase,"','') )\n",sep=''))
     cat(paste("knitr::knit('",template.loc,"',output='",basename(md.file),"')\n",sep=''))
     setwd(md.dir)
 	knitr::opts_chunk$set( fig.path=file.path("figure",outbase,""),
