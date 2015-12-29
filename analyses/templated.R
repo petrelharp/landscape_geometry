@@ -40,6 +40,10 @@ The scripts to source should define a population and a demography object.  Examp
         return(opts)
 }
 
+# ffmpeg v2.8.4 has broken webm output so use mp4
+# this is how to tell knitr to use it
+.hook_ffmpeg_html <- function (x, options) { hook_ffmpeg(x, options, ".mp4") }
+
 
 #' Safely Compile a R/markdown Template
 #'
@@ -65,7 +69,8 @@ run_template <- function ( template,
                            html=grepl("html$",output),
                            md.file=gsub("html$","md",output),
                            resource.dir="../resources",
-                           macros="macros.tex"
+                           macros="macros.tex",
+                           knitr.opts=list( animation.fun=.hook_ffmpeg_html )
                        ) {
     thisdir <- getwd()
     .fullpath <- function (x) { file.path(normalizePath("."),x) }
@@ -79,11 +84,14 @@ run_template <- function ( template,
     # change directory so that paths are correct relative to where the markdown file is
     cat("## templated.R:\n")
     cat(paste("setwd('",md.dir,"')\n",sep=''))
-    cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,"',''), cache.path=file.path('cache','",outbase,"','') )\n",sep=''))
+    cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,"',''), 
+              cache.path=file.path('cache','",outbase,"','') )\n",sep=''))
+    cat(paste("knitr::opts_chunk$set(", paste(names(knitr.opts),knitr.opts,sep="="), ")\n"))
     cat(paste("knitr::knit('",template.loc,"',output='",basename(md.file),"')\n",sep=''))
     setwd(md.dir)
 	knitr::opts_chunk$set( fig.path=file.path("figure",outbase,""),
                            cache.path=file.path("cache",outbase,"") )
+    do.call( knitr::opts_chunk$set, knitr.opts )
     knitr::knit(template.loc,output=basename(md.file))
     if (html) {
         dir.create(dirname(output),showWarnings=FALSE,recursive=TRUE)

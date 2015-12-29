@@ -212,3 +212,9 @@ We will then record:
 ./templated.R Xerospermophilus_mohavensis_reports/Xerospermophilus_mohavensis_gaussian-expsqrt.html habitats/Xerospermophilus_mohavensis.R populations/Xerospermophilus_density.R demographies/gaussian-expsqrt.R
 ./templated.R Yucca_brevifolia_reports/Yucca_brevifolia_gaussian-expsqrt.html habitats/Yucca_brevifolia.R populations/Yucca_density.R demographies/gaussian-expsqrt.R
 ```
+
+Pulling updated htmls from phoebe:
+```
+rsync -avim --include="*_reports/" --include="*html" --exclude="*" peter@phoebe.usc.edu:$PWD/ .
+
+```
