@@ -53,6 +53,21 @@ values(thab) <- ifelse( pop$habitable, 1, NA )
 plot(thab,main="habitable")
 ```
 
+
+## Stability check
+
+First, let's see if this is stable:
+```{r stability_check, fig.width=3*fig.dim}
+invasion.rate <- intrinsic_growth( pop, demog )
+pl <- function (x,zlim=range(0,x,finite=TRUE),...) {
+    hab <- do.call(stack,list(pop$habitat)[rep(1,NCOL(x))]); 
+    values(hab)[pop$habitable] <- x; 
+    plot(hab,nr=1,zlim=zlim,legend.width=2,legend.mar=12,...) 
+}
+pl(invasion.rate-1)
+```
+
+
 # Wave of adaptation
 
 
@@ -75,14 +90,14 @@ if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 Now, run longer:
 ```{r run_longer, cache=TRUE}
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
-                 summaries= list( totals=function(N){colSums(N)} ) )
+                 summaries= list( totals=function(N){colSums(N)} ),
+                 stop.fun= function(N){sum(N)==0} )
 ```
 ```{r plot_total_numbers}
-matplot( sim$summaries[["totals"]], type='l', lty=1 )
+matplot( 1+sim$summaries[["totals"]], type='l', lty=1, log='y', ylab="1+total numbers" )
 legend("topright",lty=1,col=1:3,legend=pop$genotypes)
 ```
 ```{r plot_run_longer, cache=TRUE, depends="run_longer", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
-pl <- function (x,...) { hab <- do.call(stack,list(habitat)[rep(1,NCOL(x))]); values(hab)[pop$habitable] <- x; plot(hab,nr=1,...) }
 for (i in seq_along(sim$times)) {
     pl( sim$N[,,i], main=paste(pop$genotypes,c("",sprintf("t=%d",floor(sim$times[i])),"")), zlim=range(sim$N) )
 }

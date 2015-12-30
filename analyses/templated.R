@@ -91,7 +91,7 @@ run_template <- function ( template,
     setwd(md.dir)
 	knitr::opts_chunk$set( fig.path=file.path("figure",outbase,""),
                            cache.path=file.path("cache",outbase,"") )
-    do.call( knitr::opts_chunk$set, knitr.opts )
+    do.call( knitr::opts_chunk$set, opts.knit )
     knitr::knit(template.loc,output=basename(md.file))
     if (html) {
         dir.create(dirname(output),showWarnings=FALSE,recursive=TRUE)
@@ -119,3 +119,6 @@ for (scr in args[-1]) {
 }
 
 run_template( "analysis-template.Rmd", output=output.file )
+
+## save everything
+# save( list=ls(), file=paste(output.file,".RData",sep='') )

@@ -100,14 +100,18 @@ m_{g,h}(z)
     $$ \psi_h = (\psi' \Phi_s) * p_r , $$
     where $a*b$ denotes component-wise multiplication.
 
+5.  Previous individuals are Binomially thinned.
+
 5.  The number of new, unmutated individuals is Poisson($\psi_h (1-\mu_h)$), where $\mu_h$ is the mutation probability;
     a Poisson($\sum_x \phi_h(x) \mu_h$) number of mutants are placed in locations chosen proportionally to $\phi_h$.
-
-6.  Previous individuals are Binomially thinned.
 
 
 We will (almost?) always want to have **no mutation**
 for measuring the above quantities.
+
+Note that we have old individuals die *before* germation occurs, 
+so that if death is required to make room for new individuals,
+this can happen.
 
 
 ### Measuring the decay in heterozygosity
