@@ -65,10 +65,25 @@ pl <- function (x,zlim=range(0,x,finite=TRUE),...) {
 
 ## Stability check
 
-First, let's see if this is stable:
+First, let's see if this is stable.
+Here's the mean growth rate per individual at low density:
 ```{r stability_check, fig.width=3*fig.dim}
 invasion.rate <- intrinsic_growth( pop, demog )
 pl(invasion.rate-1)
+```
+
+# Statistics of the wave
+
+We'll record a few statistics about the wave of advantageous alleles as it spreads,
+including its *radius* and *volume*.
+(We can get surface area by looking at changing volume or the area occupied by heterozygotes.)
+Here's the set-up for computing these,
+which will be functions of $N$ passed as summaries.
+```{r geom_stats}
+# distance to the mutation center for each habitable cell
+dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
+volume_fun <- function (N) { colSums(N>0) }
+radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( dists[ x>0 ] ) ) } ) }
 ```
 
 
@@ -83,7 +98,11 @@ for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
     sim <- simulate_pop( pop, demog, times=seq(0,100,length.out=11),
-                     summaries= list( totals=function(N){colSums(N)} ),
+                     summaries= list( 
+                             totals=function(N){colSums(N)},
+                             volume=volume_fun,
+                             radius=radius_fun
+                         ),
                      stop.fun=function(N){ sum(N)==0 } )
     total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
     if ( total.aA>0 ) { break }
@@ -94,17 +113,19 @@ if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 Now, run longer:
 ```{r run_longer, cache=TRUE}
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
-                 summaries= list( totals=function(N){colSums(N)} ),
+                 summaries= list( 
+                             totals=function(N){ colSums(N) },
+                             volume=volume_fun,
+                             radius=radius_fun
+                         ),
                  stop.fun= function(N){sum(N)==0} )
 ```
 ```{r plot_total_numbers}
-matplot( 1+sim$summaries[["totals"]], type='l', lty=1, log='y', ylab="1+total numbers" )
+suppressWarnings( matplot( sim$summary.times, sim$summaries[["totals"]], type='l', lty=1, log='y', ylab="total numbers" ) )
 legend("topright",lty=1,col=1:3,legend=pop$genotypes)
 ```
 ```{r plot_run_longer, cache=TRUE, depends="run_longer", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
-for (i in seq_along(sim$times)) {
-    pl( sim$N[,,i], main=paste(pop$genotypes,c("",sprintf("t=%d",floor(sim$times[i])),"")), zlim=range(sim$N) )
-}
+plot(sim,pop)
 ```
 
 ## Speed of expansion
@@ -113,24 +134,37 @@ To get the speed of expansion
 we'll compare the spread to the minimum enclosing circle,
 for heterozygotes and for homozygotes.
 ```{r expansion}
-dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
-max.dists <- sapply( pop$genotypes[-1], function (geno) {
-                    apply( sim$N[,match(geno,pop$genotypes),], 2, 
-                          function (x) { if (any(x>0)) { max( dists[ x>0 ] ) } else { NA } } )
-                 } )
 # plot:
-matplot( sim$times, max.dists, type='l', lty=1, xlab="generation")
-legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
-AA.lims <- c(1.2,0.8)*range(max.dists[,"AA"],finite=TRUE)
-AA.usethese <- which( ( max.dists[,"AA"] > AA.lims[1] ) & ( max.dists[,"AA"] < AA.lims[2] ) )
+matplot( sim$summary.times, sim$summaries[["radius"]][,c("aA","AA")], type='l', lty=1, col=seq_along(sim$genotypes)[-1],
+        xlab="generation", main='radius', ylab='distance (m)')
+legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=seq_along(sim$genotypes)[-1])
+AA.lims <- c(1.2,0.8)*range(sim$summaries[["radius"]][,"AA"],finite=TRUE)
+AA.usethese <- which( ( sim$summaries[["radius"]][,"AA"] > AA.lims[1] ) 
+                      & ( sim$summaries[["radius"]][,"AA"] < AA.lims[2] ) )
 if (length(AA.usethese)>1) {
-    AA.speed <- diff( max.dists[range(AA.usethese),"AA"] ) / diff( sim$times[range(AA.usethese)] )
-    points(  sim$times[range(AA.usethese)], max.dists[range(AA.usethese),"AA"], pch=20, col='red' )
-    abline( max.dists[min(AA.usethese),"AA"]-AA.speed*sim$times[min(AA.usethese)], AA.speed, col='red', lty=3 )
+    AA.speed <- diff( sim$summaries[["radius"]][range(AA.usethese),"AA"] ) / diff( sim$summary.times[range(AA.usethese)] )
+    points(  sim$summary.times[range(AA.usethese)], sim$summaries[["radius"]][range(AA.usethese),"AA"], pch=20, col='red' )
+    abline( sim$summaries[["radius"]][min(AA.usethese),"AA"]-AA.speed*sim$summary.times[min(AA.usethese)], AA.speed, col='red', lty=3 )
     AA.speed
 } else {
     AA.speed <- NA
 }
+```
+
+## Radius-volume relationship
+
+A useful measure of the geometry of the habitat
+is how much habitat has been covered by the wave as a function of its radius.
+Here, "volume" is the total number of occupied cells;
+this should be similar to the total numbers of individuals reported above.
+```{r volume}
+matplot( sim$summary.times, sim$summaries[["volume"]][,c("aA","AA")], type='l', lty=1, col=seq_along(sim$genotypes)[-1],
+        xlab="generation", main='volume', ylab='volume (m^2)')
+legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
+
+geoms <- data.frame( time=sim$summary.times, radius=sim$summaries[["radius"]][,"AA"], volume=sim$summaries[["volume"]][,"AA"] )
+with( geoms, plot( radius, volume, 
+     pch=20, cex=0.5, xlab='radius (m)', ylab='volume (m^2)' ) )
 ```
 
 

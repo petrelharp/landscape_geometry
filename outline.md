@@ -114,11 +114,21 @@ so that if death is required to make room for new individuals,
 this can happen.
 
 
-### Measuring the decay in heterozygosity
+### Measuring the rate of drift
 
-Run the simulation to mutation-drift equilibrium,
-then turn off mutation and see how fast local heterozygosity decays
-across different scales?
+On a practical level, what we care about most is the maintenance of variation,
+so we might want to run the simulation to mutation-drift equilibrium,
+and see how much variation there is on different scales.
+
+A quicker method of measuring the same thing
+is to measure the variance in allele frequency increments:
+pick a circle,
+look at the time series of an allele frequency $p_t$ in that circle,
+and compute the variance of $dp_t = p_{t+1}-p_t$,
+probably divided by $p_t(1-p_t)$.
+To avoid problems around $p_t = 0$ or $1$,
+maybe do this with an allele with heterozygote advantage,
+so that allele frequencies will hover around 50%?
 
 
 ### Measuring the probability of establishment
@@ -148,6 +158,14 @@ Begin the simulation with small clusters of mutants:
 either all in the same location
 or perhaps the outcome of the previous local simulations.
 
+
+### Habitat geometry
+
+A summary statistic of habitat geometry related to all these things
+is the profile of circle volume over radius;
+we can get this in an intrinsic way by
+running a simulation of an expanding advantageous allele
+and looking at the profile of the resulting circles.
 
 
 ## Modeling
