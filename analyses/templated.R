@@ -64,14 +64,20 @@ The scripts to source should define a population and a demography object.  Examp
 #' not the directory that the markdown file lives in.  
 #' This makes subsequent parseing of the markdown file infeasable more difficult.
 #' To avoid this, here we switch to the directory of the markdown file before running either.
+#'
+#' If the name of the output is 'outdir/out.html', then the 'cache' and 'figure' directories
+#' for knitr will be 'outdir/cache/out/' and 'outdir/figure/out', respectively.
+#' This ensures that separate output files have distinct caches and figures.
 run_template <- function ( template,
                            output,
                            html=grepl("html$",output),
-                           md.file=gsub("html$","md",output),
+                           md.file=paste(gsub("[.]html$","",output),".md",sep=''),
                            resource.dir="../resources",
                            macros="macros.tex",
                            opts.knit=list( animation.fun=.hook_ffmpeg_html )
                        ) {
+    # if output is a directory, we won't be able to overwrite it
+    if (dir.exists(output)) { stop(paste("Can't write to output file", output, "since it's actually a directory.")) }
     thisdir <- getwd()
     .fullpath <- function (x) { file.path(normalizePath("."),x) }
     template.loc <- .fullpath(template)
