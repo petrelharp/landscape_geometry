@@ -227,12 +227,23 @@ We will then record:
 ## Analyses done
 
 ```
-./templated.R test_habitat_reports/test_habitat_gaussian-expsqrt.html habitats/test_habitat.R demographies/gaussian-expsqrt.R
-./templated.R random_landscape_reports/random_landscape_gaussian-expsqrt.html habitats/random_landscape.R demographies/gaussian-expsqrt.R
-./templated.R Empidonax_traillii_extimus_reports/Empidonax_traillii_extimus_gaussian-expsqrt.html habitats/Empidonax_traillii_extimus.R populations/Empidonax_density.R demographies/gaussian-expsqrt.R
-./templated.R Eschscholzia_minutiflora_ssp_twisselmannii_reports/Eschscholzia_minutiflora_ssp_twisselmannii_gaussian-expsqrt.html habitats/Eschscholzia_minutiflora_ssp_twisselmannii.R populations/Eschscholzia_density.R demographies/gaussian-expsqrt.R
-./templated.R Xerospermophilus_mohavensis_reports/Xerospermophilus_mohavensis_gaussian-expsqrt.html habitats/Xerospermophilus_mohavensis.R populations/Xerospermophilus_density.R demographies/gaussian-expsqrt.R
-./templated.R Yucca_brevifolia_reports/Yucca_brevifolia_gaussian-expsqrt.html habitats/Yucca_brevifolia.R populations/Yucca_density.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd test_habitat_reports/test_habitat_gaussian-expsqrt.html habitats/test_habitat.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd random_landscape_reports/random_landscape_gaussian-expsqrt.html habitats/random_landscape.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd Empidonax_traillii_extimus_reports/Empidonax_traillii_extimus_gaussian-expsqrt.html habitats/Empidonax_traillii_extimus.R populations/Empidonax_density.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd Eschscholzia_minutiflora_ssp_twisselmannii_reports/Eschscholzia_minutiflora_ssp_twisselmannii_gaussian-expsqrt.html habitats/Eschscholzia_minutiflora_ssp_twisselmannii.R populations/Eschscholzia_density.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd Xerospermophilus_mohavensis_reports/Xerospermophilus_mohavensis_gaussian-expsqrt.html habitats/Xerospermophilus_mohavensis.R populations/Xerospermophilus_density.R demographies/gaussian-expsqrt.R
+./templated.R analysis-template.Rmd Yucca_brevifolia_reports/Yucca_brevifolia_gaussian-expsqrt.html habitats/Yucca_brevifolia.R populations/Yucca_density.R demographies/gaussian-expsqrt.R
+
+./templated.R analysis-template.Rmd Yucca_brevifolia_reports/Yucca_motivated.html habitats/Yucca_brevifolia.R populations/Yucca_density.R demographies/Yucca-demography.R
+./templated.R analysis-template.Rmd Empidonax_traillii_extimus_reports                  habitats/Empidonax_traillii_extimus.R                  
+./templated.R analysis-template.Rmd Eschscholzia_minutiflora_ssp_twisselmannii_reports  habitats/Eschscholzia_minutiflora_ssp_twisselmannii.R
+./templated.R analysis-template.Rmd Xerospermophilus_mohavensis_reports                 habitats/Xerospermophilus_mohavensis.R
+./templated.R analysis-template.Rmd Yucca_brevifolia_reports                            habitats/Yucca_brevifolia.R
+ populations/Empidonax_density.R          
+ populations/Eschscholzia_density.R
+ populations/Xerospermophilus_density.R
+ populations/Yucca_density.R
+
 ```
 
 Pulling updated htmls from phoebe:

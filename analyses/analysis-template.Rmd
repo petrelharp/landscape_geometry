@@ -27,7 +27,7 @@ Command-line for this file:
 paste(commandArgs(),collapse=" ")
 ```
 
-```{r analysis_setup, echo=FALSE}
+```{r analysis_setup, echo=FALSE, cache=TRUE}
 required <- c("pop","demog")
 usage <- " \
 Before rendering this file, the following must be defined:
@@ -96,7 +96,7 @@ radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( 
 
 
 Choose a location for a single mutation, and make sure it establishes:
-```{r init_muts, fig.width=fig.dim, cache=TRUE}
+```{r init_muts, fig.width=fig.dim, cache=TRUE, depends="analysis_setup"}
 mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
 mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
 dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
@@ -117,7 +117,7 @@ if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 ```
 
 Now, run longer:
-```{r run_longer, cache=TRUE}
+```{r run_longer, cache=TRUE, depends="init_muts"}
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91)[-1],
                  summaries= list( 
                              totals=function(N){ colSums(N) },
@@ -231,7 +231,7 @@ floor(ctab)
 
 
 Sample and initiate mutations:
-```{r sample_muts, fig.width=fig.dim}
+```{r sample_muts, fig.width=fig.dim, cache=TRUE, depends="analysis_setup"}
 nhood.radius <- 5*((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(demog$prob.germination$s-1))
 many.sims <- this.lapply( 1:36, function (dummy) {
         nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
