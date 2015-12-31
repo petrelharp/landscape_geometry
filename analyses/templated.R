@@ -3,11 +3,11 @@
 usage <- "
 Compile a templated analysis:
 
-    Rscript templated.R (output filename) [ names of .R files to source before knitting analysis-template.R ]
+    Rscript templated.R (template name) (output filename) [ names of .R files to source before knitting analysis-template.R ]
 
 The scripts to source should define a population and a demography object.  Example:
 
-    Rscript templated.R tests/template_test/test.html habitats/test_habitat.R demographies/test_demography.R
+    Rscript templated.R analysis-template.Rmd tests/template_test/test.html habitats/test_habitat.R demographies/test_demography.R
 "
 
 .pandoc.opts <-  function (resource.dir, 
@@ -107,9 +107,10 @@ run_template <- function ( template,
 args <- if (interactive()) { args } else { commandArgs(TRUE) }
 if (length(args)<2) { stop(usage) }
 
-output.file <- args[1]
+template.file <- args[1]
+output.file <- args[2]
 
-for (scr in args[-1]) {
+for (scr in args[-(1:2)]) {
     if (!file.exists(scr)) {
         stop(paste("File ", scr, " does not exist."))
     }
@@ -118,7 +119,7 @@ for (scr in args[-1]) {
     source(scr,chdir=TRUE)
 }
 
-run_template( "analysis-template.Rmd", output=output.file )
+run_template( template.file, output=output.file )
 
 ## save everything
 # save( list=ls(), file=paste(output.file,".RData",sep='') )

@@ -1,5 +1,5 @@
 ---
-title: "Local rate of drift"
+title: "Local rates of drift"
 author: "Peter Ralph"
 date: "`r Sys.Date()`"
 ---
@@ -17,29 +17,39 @@ library(rgeos)
 library(landsim)
 ```
 
+Command-line for this file:
+```{r call, echo=FALSE}
+paste(commandArgs(),collapse=" ")
+```
+
+```{r analysis_setup, echo=FALSE}
+required <- c("pop","demog")
+usage <- " \
+Before rendering this file, the following must be defined:
+    pop : a population object \
+    demog : a demography object \
+but they can't be found.
+"
+if ( !all(sapply(required,exists)) ) { stop(usage) }
+demog <- setup_demography( demog, pop )
+```
+
 Goal
 ====
 
-The goal is to measure the rate of local genetic drift
-by the variance in allele frequency changes.
-
-To do this, we'll pick some points in the landscape
+To measure the rate of local genetic drift
+by the variance in allele frequency changes,
+we'll pick some points in the landscape
 and look at allele frequencies in circles of various radii
 about those locations.
+
+Note that this may not work very well if the simulation is not neutral.
 
 
 Simulation
 ==========
 
-Here's the usual habitat set-up:
-```{r setup_demog, cache=TRUE}
-source("habitats/random_landscape.R")
-source("demographies/gaussian-expsqrt.R")
-# make it neutral!
-demog$prob.germination$s <- 1
-demog <- setup_demography(demog,pop)
-```
-Now, pick locations to census in:
+Pick locations to census in:
 ```{r pick_centers, fig.width=fig.dim, cache=TRUE, depends="setup_demog"}
 nhoods <- sample_neighborhoods( pop$habitat, n=300, radius=300 )
 radii <- c(1,3,9)*100
@@ -49,12 +59,10 @@ nhood.list <- lapply(radii, function (r) {
               } )
 census.funs <- lapply( nhood.list, census_neighborhoods, pop=pop )
 names(census.funs) <- paste("r",radii,sep='')
-plot(pop$habitat)
-for (k in seq_along(radii)) {
-    lines( nhood.list[[k]]$neighborhoods, col=k )
-}
 ```
-and run the simulation:
+and run the simulation;
+note that by default, `pop$N` starts with all individuals *aa*,
+so first we spread these out to other genotypes:
 ```{r run_sim, cache=TRUE, depends="pick_centers"}
 pop$N[] <- rpois( length(pop$N), outer(pop$N[,1],c(1/4,1/2,1/4),"*") )
 sim <- simulate_pop( pop, demog, times=seq(0,1000,length.out=201),
@@ -141,14 +149,17 @@ And here, the circles have radii proportional to $\sqrt{p_t(1-p_t)/N_t\var{dp_t}
 plot(pop$habitat)
 points(nhoods$centers,pch=20)
 for (k in seq_along(radii)) {
-    points( nhoods$centers, col=k, cex=3*svars[,k] )
+    points( nhoods$centers, col=k, cex=3*svars[[k]] )
 }
 ```
 
 The mean value of $p_t(1-p_t)/N_t\var{dp_t}$ is as follows:
 ```{r mean_var_ratios}
+ratios <- 1/(sapply(fvars,diag)*sapply( totals, colMeans ))
+# if there's only one point:
+if (is.null(dim(ratios))) { dim(ratios) <- c(NROW(ratios),NCOL(ratios)) }
 data.frame( radius=radii,
-           ratio = colMeans(  1/(sapply(fvars,diag)*sapply( totals, colMeans )) )
+           ratio = colMeans( ratios )
        )
 ```
 
@@ -158,3 +169,4 @@ Here's the raw numbers, in units of local effective popluation size:
 ```{r raw_Nes}
 1/(sapply(fvars,diag))
 ```
+

@@ -22,6 +22,11 @@ library(landsim)
 this.lapply <- lapply
 ```
 
+Command-line for this file:
+```{r call, echo=FALSE}
+paste(commandArgs(),collapse=" ")
+```
+
 ```{r analysis_setup, echo=FALSE}
 required <- c("pop","demog")
 usage <- " \
@@ -81,8 +86,8 @@ Here's the set-up for computing these,
 which will be functions of $N$ passed as summaries.
 ```{r geom_stats}
 # distance to the mutation center for each habitable cell
-dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
 volume_fun <- function (N) { colSums(N>0) }
+# will compute dists below
 radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( dists[ x>0 ] ) ) } ) }
 ```
 
@@ -94,6 +99,7 @@ Choose a location for a single mutation, and make sure it establishes:
 ```{r init_muts, fig.width=fig.dim, cache=TRUE}
 mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
 mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
+dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
@@ -112,7 +118,7 @@ if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 
 Now, run longer:
 ```{r run_longer, cache=TRUE}
-sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
+sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91)[-1],
                  summaries= list( 
                              totals=function(N){ colSums(N) },
                              volume=volume_fun,
@@ -153,17 +159,24 @@ if (length(AA.usethese)>1) {
 
 ## Radius-volume relationship
 
-A useful measure of the geometry of the habitat
-is how much habitat has been covered by the wave as a function of its radius.
+Perhaps a useful measure of the geometry of the habitat
+is how much habitat has been covered by the wave as a function of its radius?
 Here, "volume" is the total number of occupied cells;
 this should be similar to the total numbers of individuals reported above.
 ```{r volume}
-matplot( sim$summary.times, sim$summaries[["volume"]][,c("aA","AA")], type='l', lty=1, col=seq_along(sim$genotypes)[-1],
+matplot( sim$summary.times, sim$summaries[["volume"]][,c("aA","AA")], type='l', lty=1, col=seq_along(pop$genotypes),
         xlab="generation", main='volume', ylab='volume (m^2)')
-legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=1:2)
-
-geoms <- data.frame( time=sim$summary.times, radius=sim$summaries[["radius"]][,"AA"], volume=sim$summaries[["volume"]][,"AA"] )
-with( geoms, plot( radius, volume, 
+legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=seq_along(pop$genotypes))
+geoms <- data.frame( 
+                    time=sim$summary.times, 
+                    het.total=sim$summaries[["totals"]][,"aA"], 
+                    het.radius=sim$summaries[["radius"]][,"aA"], 
+                    het.volume=sim$summaries[["volume"]][,"aA"],
+                    hom.total=sim$summaries[["totals"]][,"AA"], 
+                    hom.radius=sim$summaries[["radius"]][,"AA"], 
+                    hom.volume=sim$summaries[["volume"]][,"AA"]
+                )
+with( geoms, plot( het.radius, het.total, 
      pch=20, cex=0.5, xlab='radius (m)', ylab='volume (m^2)' ) )
 ```
 
