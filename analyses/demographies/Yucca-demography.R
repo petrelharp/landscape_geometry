@@ -29,7 +29,7 @@ demog <- demography(
                             radius = 1200,
                             normalize = 1
                      ),
-        genotypes = c("aa","aA","AA")
+        genotypes = c("aa","aA","AA"),
         description = "
 Yucca-demography.R :
     - density-dependent population regulation via probability of germination
