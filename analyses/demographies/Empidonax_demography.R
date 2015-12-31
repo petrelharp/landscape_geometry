@@ -10,8 +10,8 @@ demog <- demography(
                  s = 1.5,      # multiplicative selective benefit of the A allele
                  competition = migration(
                                          kern="gaussian",
-                                         sigma=400,
-                                         radius=1200,
+                                         sigma=200,
+                                         radius=400,
                                          normalize=1
                                      )
              ),
@@ -19,15 +19,17 @@ demog <- demography(
         prob.survival = 0.9,
         pollen.migration = migration(
                             kern = "gaussian",
-                            sigma = 500,
-                            radius = 2000,
-                            normalize = NULL
+                            sigma = 300,
+                            radius = 1000,
+                            normalize = NULL,
+                            n=4
                      ),
         seed.migration = migration(
                             kern = "gaussian",
-                            sigma = 1000,
-                            radius = 5000,
-                            normalize = 1
+                            sigma = 400,
+                            radius = 1500,
+                            normalize = 1,
+                            n=9
                      ),
         genotypes = c("aa","aA","AA"),
         description = "
