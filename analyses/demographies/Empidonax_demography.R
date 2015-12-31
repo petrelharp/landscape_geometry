@@ -26,7 +26,7 @@ demog <- demography(
         seed.migration = migration(
                             kern = "gaussian",
                             sigma = 1000,
-                            radius = 20000,
+                            radius = 5000,
                             normalize = 1
                      ),
         genotypes = c("aa","aA","AA"),
