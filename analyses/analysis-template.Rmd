@@ -87,7 +87,7 @@ which will be functions of $N$ passed as summaries.
 ```{r geom_stats}
 # distance to the mutation center for each habitable cell
 volume_fun <- function (N) { colSums(N>0) }
-# will compute dists below
+# will compute 'dists' below
 radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( dists[ x>0 ] ) ) } ) }
 ```
 
@@ -188,10 +188,11 @@ here is the difference between the furthest occurence that *A* is at 25% and the
 ```{r wave_width}
 A.freqs <- (sim$N[,2,]/2 + sim$N[,3,])/(sim$N[,1,] + sim$N[,2,] + sim$N[,3,])
 quant.dists <- cbind(
-                     max = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.5)) { max( dists[x>0], na.rm=TRUE ) - max( dists[x>0.5], na.rm=TRUE ) } else { NA } } ),
+                     max = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.5)) { max( dists[x>0], na.rm=TRUE ) - max( dists[x>0.5], na.rm=TRUE ) } else { NA } } ), 
                      iqr = apply( A.freqs, 2, function (x) { if (any(x[!is.na(x)]>0.75)) { max( dists[x>0.25], na.rm=TRUE ) - max( dists[x>0.75], na.rm=TRUE ) } else { NA } } )
                  )
-est.widths <- colMeans(quant.dists[AA.usethese,,drop=FALSE],na.rm=TRUE)
+width.usethese <- which( ( sim$times >= min(sim$summary.times[AA.usethese]) ) & ( sim$times <= max(sim$summary.times[AA.usethese]) ) )
+est.widths <- colMeans(quant.dists[width.usethese,,drop=FALSE],na.rm=TRUE)
 ```
 
 
