@@ -141,9 +141,9 @@ we'll compare the spread to the minimum enclosing circle,
 for heterozygotes and for homozygotes.
 ```{r expansion}
 # plot:
-matplot( sim$summary.times, sim$summaries[["radius"]][,c("aA","AA")], type='l', lty=1, col=seq_along(sim$genotypes)[-1],
+matplot( sim$summary.times, sim$summaries[["radius"]][,c("aA","AA")], type='l', lty=1, col=seq_along(pop$genotypes)[-1],
         xlab="generation", main='radius', ylab='distance (m)')
-legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=seq_along(sim$genotypes)[-1])
+legend( "bottomright", legend=pop$genotypes[-1], lty=1, col=seq_along(pop$genotypes)[-1])
 AA.lims <- c(1.2,0.8)*range(sim$summaries[["radius"]][,"AA"],finite=TRUE)
 AA.usethese <- which( ( sim$summaries[["radius"]][,"AA"] > AA.lims[1] ) 
                       & ( sim$summaries[["radius"]][,"AA"] < AA.lims[2] ) )
