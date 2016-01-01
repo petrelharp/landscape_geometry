@@ -23,9 +23,10 @@ this.lapply <- lapply
 ```
 
 Command-line for this file:
-```{r call, echo=FALSE}
-paste(commandArgs(),collapse=" ")
 ```
+`r paste(commandArgs(),collapse=" ")`
+```
+Current git commit: `r system2("git", c("rev-parse", "HEAD"))`
 
 ```{r analysis_setup, echo=FALSE, cache=TRUE, cache.extra=sourced.files}
 required <- c("pop","demog")
