@@ -218,7 +218,7 @@ layout(t(1:2))
 pl(seed.sigmas,main="sigma for seeds")
 pl(pollen.sigmas,main="sigma for pollen")
 # this will have length zero if it doesn't exist
-s <- (demog$prob.germination$s-1)
+s <- if (inherits(demog$prob.germination,"vital")) { (demog$prob.germination$s-1) } else { NA }
 ctab <- data.frame(
            speed = c( expected = 2 * mean.sigma * sqrt(s) * (1-demog$prob.survival) ,
                       observed = AA.speed ),
