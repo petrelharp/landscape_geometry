@@ -216,6 +216,7 @@ c(empirical=mean.sigma,naive=(demog$pollen.migration$sigma+demog$seed.migration$
 layout(t(1:2))
 pl(seed.sigmas,main="sigma for seeds")
 pl(pollen.sigmas,main="sigma for pollen")
+# this will have length zero if it doesn't exist
 s <- (demog$prob.germination$s-1)
 ctab <- data.frame(
            speed = c( expected = 2 * mean.sigma * sqrt(s) * (1-demog$prob.survival) ,
@@ -233,7 +234,7 @@ floor(ctab)
 
 Sample and initiate mutations:
 ```{r sample_muts, fig.width=fig.dim, cache=TRUE, dependson="analysis_setup"}
-nhood.radius <- 5*((demog$pollen.migration$sigma+demog$seed.migration$sigma)/2*sqrt(demog$prob.germination$s-1))
+nhood.radius <- 1000
 many.sims <- this.lapply( 1:36, function (dummy) {
         nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 
                                radius=nhood.radius, separation=2*nhood.radius )
