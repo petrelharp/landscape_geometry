@@ -115,7 +115,7 @@ points(mutloc$center,pch="*",col='red')
 # Simulate, check for establishment
 
 We'll place the single mutation, run it forwards for 100 generations, and if it hasn't established, try again.
-```{r sim_muts, cache=TRUE, depends="init_muts"}
+```{r sim_muts, cache=TRUE, dependson="init_muts"}
 for (ntries in 1:100) {
     pop <- set_N( pop, i=which(pop$habitable), j="aA", 
              value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
@@ -130,7 +130,7 @@ for (ntries in 1:100) {
 # Run longer 
 
 Now, we'll run it for longer.
-```{r run_longer, cache=TRUE, depends="sim_muts"}
+```{r run_longer, cache=TRUE, dependson="sim_muts"}
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
                  summaries= list( totals=function(N){colSums(N)} ) )
 matplot( sim$summaries[[1]], type='l', lty=1 )

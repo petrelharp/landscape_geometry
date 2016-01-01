@@ -111,7 +111,7 @@ Now, run longer:
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91),
                  summaries= list( totals=function(N){colSums(N)} ) )
 ```
-```{r plot_run_longer, cache=TRUE, depends="run_longer", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
+```{r plot_run_longer, cache=TRUE, dependson="run_longer", fig.show="animate", aniopts="controls", interval=0.1, fig.width=3*fig.dim}
 pl <- function (x,...) { hab <- do.call(stack,list(habitat)[rep(1,NCOL(x))]); values(hab)[pop$habitable] <- x; plot(hab,nr=1,...) }
 for (i in seq_along(sim$times)) {
     pl( sim$N[,,i], main=paste(pop$genotypes,c("",sprintf("t=%d",floor(sim$times[i])),"")), zlim=range(sim$N) )

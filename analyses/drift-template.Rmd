@@ -50,7 +50,7 @@ Simulation
 ==========
 
 Pick locations to census in:
-```{r pick_centers, fig.width=fig.dim, cache=TRUE, depends="setup_demog"}
+```{r pick_centers, fig.width=fig.dim, cache=TRUE, dependson="setup_demog"}
 nhoods <- sample_neighborhoods( pop$habitat, n=300, radius=300 )
 radii <- c(1,3,9)*100
 nhood.list <- lapply(radii, function (r) {
@@ -63,7 +63,7 @@ names(census.funs) <- paste("r",radii,sep='')
 and run the simulation;
 note that by default, `pop$N` starts with all individuals *aa*,
 so first we spread these out to other genotypes:
-```{r run_sim, cache=TRUE, depends="pick_centers"}
+```{r run_sim, cache=TRUE, dependson="pick_centers"}
 pop$N[] <- rpois( length(pop$N), outer(pop$N[,1],c(1/4,1/2,1/4),"*") )
 sim <- simulate_pop( pop, demog, times=seq(0,1000,length.out=201),
                  summaries= c( unlist(census.funs), 
