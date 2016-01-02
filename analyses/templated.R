@@ -90,7 +90,7 @@ run_template <- function ( template,
     dir.create(dirname(md.file),showWarnings=FALSE,recursive=TRUE)
     outbase <- gsub("[.][^.]*$","",basename(md.file))
     # change directory so that paths are correct relative to where the markdown file is
-    cat("## templated.R:\n")
+    cat("## run_template:\n")
     cat(paste("setwd('",md.dir,"')\n",sep=''))
     cat(paste("knitr::opts_chunk$set( fig.path=file.path('figure','",outbase,"',''), 
               cache.path=file.path('cache','",outbase,"','') )\n",sep=''))
@@ -131,6 +131,8 @@ for (scr in source.these) {
 }
 
 # this can be used to invalidate caches in knitr:
+cat("## templated.R:\n")
+cat(paste("sourced.files <- tools::md5sum(c('", paste(source.these,collapse="', '"), "'))", sep=''), "\n" )
 sourced.files <- tools::md5sum( source.these )
 
 run_template( template.file, output=output.file )
