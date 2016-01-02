@@ -3,17 +3,81 @@
 Vegetation classification:
 ==========================
 
+Many datasets available at [this F&W page](http://www.dfg.ca.gov/biogeodata/gis/veg.asp)
+or on [BIOS](https://map.dfg.ca.gov/bios/?bookmark=940).
+
+Vegetation classification info at [vegetation.cnps.org](http://vegetation.cnps.org).
+
 - [Desert vegtation classification](desert_veg)
     * downloaded from [BIOS](https://map.dfg.ca.gov/bios/?bookmark=534) on 11/24/15
     * by Todd Keeler-Wolf for DRECP
+    * loads as a `SpatialPolygonsDataFrame`
     * [western](desert_veg/western/metadata.html)
-    * [eastern](desert_veg/eastern/metadata.html)
+        * vegetation classification recorded as `NVCSName`
+        ```
+        x <- readOGR("desert_veg/western/ds735.gdb","ds735")
+        # to get total area by each
+        sort( tapply(x$Shape_Area,x$NVCSName,sum) )
+        # plot various alliances
+        plot(subset(x,NVCSName=="Larrea tridentata - Ambrosia dumosa"),col=adjustcolor("black",0.5),border=NA)
+        plot(subset(x,NVCSName=="Yucca brevifolia"),col=adjustcolor("red",0.5),border=NA,add=TRUE)
+        plot(subset(x,NVCSName=="Viguiera parishii"),col=adjustcolor("green",0.5),border=NA,add=TRUE)
+        plot(subset(x,NVCSName=="Larrea tridentata"),col=adjustcolor("grey",0.5),border=NA,add=TRUE)
+        ```
+
+    * [central](desert_veg/central/metadata.html)
+        * vegetation classification recorded as `LABEL_1`
+        * same as western
+        ```
+        x <- readOGR("desert_veg/central","ds166")
+        # to get total area by each
+        sort( tapply(x$AREA,x$LABEL_1,sum) )
+        # this assigns the 'last' code overlapping a cell to that cell, numerically
+        z <- rasterize(x,raster(extent(x),res=1000),"LABEL_1")
+        # *percent* of each cell is covered by jtree:
+        jtc <- rasterize(subset(x,LABEL_1=="Joshua Tree"),raster(extent(x),res=1000),getCover=TRUE)
+        # To get a binary layer, for any cell that has some jtree overlapping:
+        jt <- rasterize(subset(x,LABEL_1=="Joshua Tree"),raster(extent(x),res=1000),1)
+        # not quite the same thing:
+        jt2 <- rasterize(x,raster(extent(x),res=1000),x$LABEL_1=="Joshua Tree")
+        table(values(jt),values(jt2))
+        ```
+
     * [anza borrego](desert_veg/anza_borrego/metadata.html)
-    * to read, use e.g. `x <- readOGR(layer="ds165",dsn="ds165.gdb")`
+        * older project (1998)
+        * different format: classification under `CALVEGNAME`?
+        ```
+        x <- readOGR("desert_veg/anza_borrego/ds165.gdb","ds165")
+        ```
+
+* [Northern Sierra Nevada Foothills](sierra_foothills)
+    * downloaded from [BIOS](ftp://ftp.dfg.ca.gov/BDB/GIS/BIOS/Public_Datasets/500_599/ds566.zip) on 12/31/15
+    * veg classification stored in `MapUnit`? (older version in `CalVeg`)
+    * long and skinny
+    * read in like this: 
+        ```
+        x <- readOGR("sierra_foothills/ds566.gdb","ds566")
+        z  <- rasterize(subset(x,MapUnit=="Quercus wislizeni"),raster(extent(x),res=1000),getCover=TRUE)
+        # total areas
+        sort(tapply(x$Shape_Area,x$MapUnit,sum))
+        ```
+
+        ![example bit from the *Quercus wislizeni* layer](sierra_foothills/Q_wislizeni_chunk.png)
+
+* [Central Valley Riparian](great_valley_riparian)
+    * downloaded from [BIOS](ftp://ftp.dfg.ca.gov/BDB/GIS/BIOS/Public_Datasets/1000_1099/ds1000.zip)
+    * read in like this: 
+        ```
+        x <- readOGR("great_valley_riparian/ds1000.gdb","ds1000")
+        z  <- rasterize(x,raster(extent(x),res=1000))
+        ```
+
+* [Lassen Foothills](lassen)
+    * downloaded from [BIOS](ftp://ftp.dfg.ca.gov/BDB/GIS/BIOS/Public_Datasets/500_599/ds564.zip) on 12/31/15
+    * file format: MDB... use `Hmisc::mdb.get`...
 
 
-
-Maxent species distribution models:
+Species distribution models:
 ==========================
 
 
@@ -74,3 +138,33 @@ a big file containing TIFFs of ranges for many species is [available](ftp://ftp.
 - [Downloaded](ftp://ftp.biogeog.ucsb.edu/pub/org/biogeog/data/CEC_desert/Mojavset.rar) on 12/20/2015.
 - Species ranges in [Mojavset/Spatial/targets/biodiversity/binary](Mojavset/Spatial/targets/biodiversity/binary).
 - Load with e.g. `x <- raster("Mojavset/Spatial/targets/biodiversity/binary/Boechera_shockleyi_broad_extent_avg.tif")`.
+
+
+Joshua Tree, from Cam Barrows
+-----------------------------
+
+Distribution now, and at +3 degrees C.
+Files in [joshua_tree_niche](joshua_tree_niche), sent on 11/24/15:
+
+>  These are old models, but I have attached models for current and a +3C summer maximum temperature future scenario.
+
+- Citation:  (Biological Conservation, 2012)
+- `SpatialPoints`, not polygons
+- read layers with
+    ```
+    x0 <- readOGR(".","YUBRa_CVRR2_R2P1_H7c_joined")
+    x3 <- readOGR(".","YUBRa_CVRR2_R2P1H7b+3C_joined")
+    ```
+
+
+Additional things on the maps
+=============================
+
+
+From Gideon's tortoise work:
+```{r code="layer_utils.R"}
+```
+
+Various downloads on [Natural Earth](http://www.naturalearthdata.com/downloads/10m-raster-data/):
+- [Shaded Relief](background/SR_HR/) from [http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/raster/SR_HR.zip]
+- [Manual Shaded Relief](background/US_MSR_10M/) from [http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/raster/US_MSR_10M.zip]
