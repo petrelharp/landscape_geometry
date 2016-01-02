@@ -3,6 +3,10 @@
 Vegetation classification:
 ==========================
 
+Alternative source for entire DRECP area: 
+[Land Cover/Natural Vegetation Communities](http://databasin.org/datasets/0a419342ec904b3c8fc710003f52ebe0#) 
+-- just the various datasets merged but without names uniformized
+
 Many datasets available at [this F&W page](http://www.dfg.ca.gov/biogeodata/gis/veg.asp)
 or on [BIOS](https://map.dfg.ca.gov/bios/?bookmark=940).
 

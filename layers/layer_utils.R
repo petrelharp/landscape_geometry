@@ -25,7 +25,8 @@ get_dem <- function (x) {
 #' @param x The Raster* object.
 get_elev <- function (x) {
     # SR <- raster(file.path(.thisdir,"background/US_MSR_10M/US_MSR.tif"))
-    SR <- raster(file.path(.thisdir,"background/SR_HR/SR_HR.tif"))
+    # SR <- raster(file.path(.thisdir,"background/SR_HR/SR_HR.tif"))
+    SR <- raster(file.path(.thisdir,"background/cropped_SR_HR.tif"))
     projectRaster(SR,to=raster(extent(x),res=500,crs=CRS(proj4string(x))))
 
 }
