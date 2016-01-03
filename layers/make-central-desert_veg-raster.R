@@ -74,7 +74,7 @@ for (tt in types) {
                 cat(tt,"\n")
                 rasterize( subset(vegmap,Partition==tt),
                            raster(extent(vegmap),res=200), getCover=TRUE, 
-                           file=paste("cleaned/desert_veg-central-",gsub("/","_",tt),".grd",sep=''),format="raster", overwrite=TRUE)
+                           file=paste("cleaned/desert_veg-central-",gsub("/","_",tt),".tif",sep=''),format="GTiff", overwrite=TRUE)
 }
 
 # for (k in seq_along(veg.rasters)) {
