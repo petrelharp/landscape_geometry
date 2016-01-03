@@ -1,0 +1,21 @@
+## low density
+
+habitable <- (!is.na(values(habitat)) & values(habitat)>0)
+base.carrying.capacity <- 100/(100^2)  # per square meter
+pop <- population( 
+                  habitat = habitat,
+                  accessible = !is.na(values(habitat)),
+                  habitable = habitable,
+                  genotypes = c("aa","aA","AA"),
+                  carrying.capacity = base.carrying.capacity * prod(res(raster)) * values(habitat)[habitable],
+                  N = cbind( aa=rpois(sum(habitable),carrying.capacity),
+                             aA=0, 
+                             AA=0 ),
+                  description = paste( habitat.description, "
+    - defines carrying.capacity to be 10 per hectare
+    - multiplied by values in habitat
+    - only good habitat areas are accessible and habitable
+", sep="\n")
+             )
+
+

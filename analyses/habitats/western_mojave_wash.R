@@ -4,6 +4,8 @@ require(landsim)
 raster.file <- "../../layers/cleaned/desert_veg-western-wash_wetland"
 
 habitat <- raster(raster.file)
+values(habitat) <- values(habitat)/100
+values(habitat)[values(habitat)==0] <- NA
 habitat.description <- "
 western_mojave_wash.R :
     - derived from ds735, vegtypes for Western Mojave
