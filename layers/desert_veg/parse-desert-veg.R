@@ -141,9 +141,8 @@ for (k in seq_along(class.cols)) {
 }
 legend("topright",fill=class.cols,legend=levels(vegmap$NVCSMG)[mg.area.ords[seq_along(class.cols)]])
 
-# make divisions
 # here's how the NVCSMG break up by area
-lapply( levels(vegmap$NVCSMG), function (x) with( subset(vegmap@data,NVCSMG==x), tapply( AREA, droplevels(VEGTYPE), sum ) ) )
+sapply( levels(vegmap$NVCSMG), function (x) with( subset(vegmap@data,NVCSMG==x), tapply( AREA, droplevels(VEGTYPE), sum ) ) )
 
 
 ### Anza-Borrego
@@ -236,4 +235,7 @@ for (k in seq_along(class.cols)) {
          col=adjustcolor(class.cols[k],0.5), add=TRUE, border=NA )
 }
 legend("topright",fill=class.cols,legend=levels(vegmap$NVCS_MG)[mg.area.ords[seq_along(class.cols)]])
+
+# here's how the NVCSMG break up by area
+sapply( levels(vegmap$NVCS_MG), function (x) with( subset(vegmap@data,NVCS_MG==x), tapply( AREA, droplevels(VEGTYPE), sum ) ) )
 
