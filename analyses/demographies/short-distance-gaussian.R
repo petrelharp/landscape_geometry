@@ -1,13 +1,12 @@
 
 demog <- demography(
         prob.seed = 0.2,
-        fecundity = 100,
-        prob.germination = vital( 
+        fecundity = vital( 
                  function (N, ...) {
-                     out <- r0 / ( 1 + migrate(competition,x=rowSums(N))/carrying.capacity )
+                     out <- f0 / ( 1 + migrate(competition,x=rowSums(N))/carrying.capacity )
                      return( cbind( aa=out, aA=s*out, AA=s^2*out ) )
                  },
-                 r0 = 0.01,  # one in ten seeds will germinate at low densities
+                 f0 = 100,  
                  s = 1.5,    # multiplicative selective benefit of the A allele
                  competition = migration(
                                          kern="gaussian",
@@ -16,27 +15,27 @@ demog <- demography(
                                          normalize=1
                                      )
              ),
+        prob.germination = 0.1,
         prob.survival = 0.9,
         pollen.migration = migration(
                             kern = "gaussian",
-                            sigma = 10,
-                            radius = 50,
-                            normalize = NULL
+                            sigma = 200,
+                            radius = 600,
+                            normalize = NULL,
+                            n=1
                      ),
         seed.migration = migration(
                             kern = "gaussian",
-                            sigma = 50,
-                            radius = 500,
-                            normalize = 1
+                            sigma = 200,
+                            radius = 600,
+                            normalize = 1,
+                            n=1
                      ),
         genotypes = c("aa","aA","AA"),
         description = "
-short-distance-dispersal :
+short-distance-gaussian :
     - density-dependent population regulation via probability of germination
-    - Gaussian seed dispersal over a short range
-    - almost no pollen dispersal
+    - Gaussian seed and pollen dispersal over a short range
     - needs 'carrying.capacity' to be defined.
 "
     )
-
-

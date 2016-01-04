@@ -6,7 +6,7 @@ demog <- demography(
                      out <- f0 / ( 1 + migrate(competition,x=rowSums(N))/carrying.capacity )
                      return( cbind( aa=out, aA=s*out, AA=s^2*out ) )
                  },
-                 f0 = 100,  # one in ten seeds will germinate at low densities
+                 f0 = 100, 
                  s = 1.5,    # multiplicative selective benefit of the A allele
                  competition = migration(
                                          kern="gaussian",
@@ -19,15 +19,17 @@ demog <- demography(
         prob.survival = 0.9,
         pollen.migration = migration(
                             kern = "gaussian",
-                            sigma = 500,
-                            radius = 2000,
-                            normalize = NULL
+                            sigma = 200,
+                            radius = 600,
+                            normalize = NULL,
+                            n=9
                      ),
         seed.migration = migration(
                             kern = "gaussian",
-                            sigma = 500,
-                            radius = 2000,
-                            normalize = 1
+                            sigma = 200,
+                            radius = 600,
+                            normalize = 1,
+                            n=6  # sqrt(6)*200 = 489
                      ),
         genotypes = c("aa","aA","AA"),
         description = "
