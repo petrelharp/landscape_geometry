@@ -145,7 +145,7 @@ matplot( sapply( totals, colMeans ), 1/sapply(fvars,diag), pch=1, log='xy',
 abline(0,1)
 ```
 And here, the circles have radii proportional to $\sqrt{p_t(1-p_t)/N_t\var{dp_t}}$:
-```{r scaled_var}
+```{r scaled_var, fig.height=4*fig.dim, fig.width=4*fig.dim}
 plot(pop$habitat)
 points(nhoods$centers,pch=20)
 for (k in seq_along(radii)) {

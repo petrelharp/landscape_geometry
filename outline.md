@@ -287,21 +287,118 @@ We will then record:
 
 ###
 
+# template
+(
+for HAB in saline scrub woods wash
+do
+    for DIST in long short
+    do
+        #echo "\
+./templated.R analysis-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-densit_analysis..html \
+habitats/central_mojave_${HAB}.R populations/medium-density.R demographies/${DIST}-distance-gaussian.R
+#"
+    done
+done
+) &> med-density-central.log
+
+
+####
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/saline/long-distance-medium-density_analysis.html \
+	habitats/central_mojave_saline.R \
+	populations/medium-density.R \
+	demographies/long-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/saline/short-distance-medium-density_analysis.html \
+	habitats/central_mojave_saline.R \
+	populations/medium-density.R \
+	demographies/short-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/scrub/long-distance-medium-density_analysis.html \
+	habitats/central_mojave_scrub.R \
+	populations/medium-density.R \
+	demographies/long-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/scrub/short-distance-medium-density_analysis.html \
+	habitats/central_mojave_scrub.R \
+	populations/medium-density.R \
+	demographies/short-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/woods/long-distance-medium-density_analysis.html \
+	habitats/central_mojave_woods.R \
+	populations/medium-density.R \
+	demographies/long-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/woods/short-distance-medium-density_analysis.html \
+	habitats/central_mojave_woods.R \
+	populations/medium-density.R \
+	demographies/short-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/wash/long-distance-medium-density_analysis.html \
+	habitats/central_mojave_wash.R \
+	populations/medium-density.R \
+	demographies/long-distance-gaussian.R
+
+./templated.R \
+	analysis-template.Rmd \
+	mojave_central/wash/short-distance-medium-density_analysis.html \
+	habitats/central_mojave_wash.R \
+	populations/medium-density.R \
+	demographies/short-distance-gaussian.R
+
+
+###
+
+# drift
+(
 for HAB in saline scrub woods wash
 do
     for DIST in long short
     do
         echo "\
-./templated.R analysis-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-density.html \
-habitats/central_mojave_${HAB}.R populations/medium-density.R demographies/${DIST}-distance-gaussian.R
+./templated.R drift-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-density_drift.html \
+habitats/central_mojave_${HAB}.R populations/medium-density.R demographies/${DIST}-distance-gaussian_neutral.R
 "
     done
 done
+) &> med-density-central-drift.log
+
+./templated.R drift-template.Rmd mojave_central/saline/long-distance-medium-density_drift.html habitats/central_mojave_saline.R populations/medium-density.R demographies/long-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/saline/short-distance-medium-density_drift.html habitats/central_mojave_saline.R populations/medium-density.R demographies/short-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/scrub/long-distance-medium-density_drift.html habitats/central_mojave_scrub.R populations/medium-density.R demographies/long-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/scrub/short-distance-medium-density_drift.html habitats/central_mojave_scrub.R populations/medium-density.R demographies/short-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/woods/long-distance-medium-density_drift.html habitats/central_mojave_woods.R populations/medium-density.R demographies/long-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/woods/short-distance-medium-density_drift.html habitats/central_mojave_woods.R populations/medium-density.R demographies/short-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/wash/long-distance-medium-density_drift.html habitats/central_mojave_wash.R populations/medium-density.R demographies/long-distance-gaussian_neutral.R
+
+./templated.R drift-template.Rmd mojave_central/wash/short-distance-medium-density_drift.html habitats/central_mojave_wash.R populations/medium-density.R demographies/short-distance-gaussian_neutral.R
+
 
 ```
 
 Pulling updated htmls from phoebe:
 ```
 rsync -avim --include="*_reports/" --include="*html" --exclude="*" peter@phoebe.usc.edu:$PWD/ .
+rsync -avim --include="*/" --include="*html" --exclude="*" peter@phoebe.usc.edu:$PWD/ .
 
 ```

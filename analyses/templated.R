@@ -133,7 +133,7 @@ for (scr in source.these) {
 
 # this can be used to invalidate caches in knitr:
 cat("## templated.R:\n")
-cat(paste("sourced.text <- lapply( c(", paste(source.these,collapse=", "), ", scan, what='char', sep='\n' )", sep=''),"\n")
+cat(paste("sourced.text <- lapply( c('", paste(source.these,collapse="', '"), "'), scan, what='char', sep='\n' )", sep=''),"\n")
 sourced.text <- lapply( source.these, scan, what="char", sep='\n' )
 
 run_template( template.file, output=output.file )
