@@ -261,7 +261,8 @@ We will then record:
     Empidonax_traillii_extimus_reports/Empidonax-everything.html \
     habitats/Empidonax_traillii_extimus.R \
     populations/Empidonax_density.R \
-    demographies/Empidonax_demography.R
+    demographies/Empidonax_demography.R \
+    &> Empidonax_traillii_extimus_reports/Empidonax-everything.log
 
 ./templated.R \
     analysis-template.Rmd \
@@ -279,10 +280,23 @@ We will then record:
 
 ./templated.R \
     analysis-template.Rmd \
-    Yucca_brevifolia_reports/Yucca/everything.html \
+    Yucca_brevifolia_reports/Yucca-everything.html \
     habitats/Yucca_brevifolia.R \
     populations/Yucca_density.R \
     demographies/Yucca-demography.R
+
+###
+
+for HAB in saline scrub woods wash
+do
+    for DIST in long short
+    do
+        echo "\
+./templated.R analysis-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-density.html \
+habitats/central_mojave_${HAB}.R populations/medium-density.R demographies/${DIST}-distance-gaussian.R
+"
+    done
+done
 
 ```
 
