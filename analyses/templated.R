@@ -9,7 +9,8 @@ The scripts to source should define a population and a demography object.  Examp
 
     Rscript templated.R analysis-template.Rmd tests/template_test/test.html habitats/test_habitat.R demographies/test_demography.R
 
-This also defines the variable 'sourced.files', which is a vector whose names are the files sourced and whose values are their MD5 hashes.
+This also defines the variable 'sourced.text', which is a list of character vectors containing the files sourced,
+and can be used for reproducibility in the document itself.
 "
 
 .pandoc.opts <-  function (resource.dir, 
@@ -132,8 +133,8 @@ for (scr in source.these) {
 
 # this can be used to invalidate caches in knitr:
 cat("## templated.R:\n")
-cat(paste("sourced.files <- tools::md5sum(c('", paste(source.these,collapse="', '"), "'))", sep=''), "\n" )
-sourced.files <- tools::md5sum( source.these )
+cat(paste("sourced.text <- lapply( c(", paste(source.these,collapse=", "), ", scan, what='char', sep='\n' )", sep=''),"\n")
+sourced.text <- lapply( source.these, scan, what="char", sep='\n' )
 
 run_template( template.file, output=output.file )
 

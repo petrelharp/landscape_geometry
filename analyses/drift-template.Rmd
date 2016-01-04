@@ -165,8 +165,17 @@ data.frame( radius=radii,
 
 # Raw data
 
-Here's the raw numbers, in units of local effective popluation size:
+Here's the raw numbers, in units of local effective population size:
 ```{r raw_Nes}
 1/(sapply(fvars,diag))
 ```
 
+
+# What was sourced to set up the document
+
+
+```{r failsafe, include=FALSE}
+if (!exists("sourced.text")) { sourced.text <- "# The variable 'sourced.text' was not set before evaluating this template." }
+```
+```{r setup_code, code=unlist(sourced.text), eval=FALSE}
+```

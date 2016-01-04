@@ -75,7 +75,7 @@ for (tt in types) {
         x <- rasterize( subset(vegmap,Partition==tt),
                    raster(extent(vegmap),res=200), getCover=TRUE )
         x[x==0] <- NA
-        writeRaster( veg.rasters[[k]],
-                    file=paste("cleaned/desert_veg-central-",gsub("/","_",types[k]),".tif",sep=''),
+        writeRaster( x,
+                    file=paste("cleaned/desert_veg-central-",gsub("/","_",tt),".tif",sep=''),
                     format="GTiff", overwrite=TRUE)
 }

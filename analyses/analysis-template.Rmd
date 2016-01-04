@@ -28,7 +28,7 @@ Command-line for this file:
 ```
 Current git commit: `r system2("git", c("rev-parse", "HEAD"))`
 
-```{r analysis_setup, echo=FALSE, cache=TRUE, cache.extra=sourced.files}
+```{r analysis_setup, echo=FALSE, cache=TRUE, cache.extra=sourced.text}
 required <- c("pop","demog")
 usage <- " \
 Before rendering this file, the following must be defined:
@@ -272,4 +272,13 @@ write.csv( cbind( coordinates(sim.results$centers), sim.results$established ), f
 
 ```{r show_plfun}
 pl
+```
+
+# What was sourced to set up the document
+
+
+```{r failsafe, include=FALSE}
+if (!exists("sourced.text")) { sourced.text <- "# The variable 'sourced.text' was not set before evaluating this template." }
+```
+```{r setup_code, code=unlist(sourced.text), eval=FALSE}
 ```
