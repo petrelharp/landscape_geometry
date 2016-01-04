@@ -1,7 +1,7 @@
 require(raster)
 require(landsim)
 
-raster.file <- "../../layers/cleaned/desert_veg-western-wash_wetland"
+raster.file <- "../../layers/cleaned/desert_veg-western-wash_wetland.tif"
 
 habitat <- raster(raster.file)
 values(habitat) <- values(habitat)/100

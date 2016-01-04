@@ -7,8 +7,8 @@ pop <- population(
                   accessible = !is.na(values(habitat)),
                   habitable = habitable,
                   genotypes = c("aa","aA","AA"),
-                  carrying.capacity = base.carrying.capacity * prod(res(raster)) * values(habitat)[habitable],
-                  N = cbind( aa=rpois(sum(habitable),carrying.capacity),
+                  carrying.capacity = base.carrying.capacity * prod(res(habitat)) * values(habitat)[habitable],
+                  N = cbind( aa=rep(0,sum(habitable)),
                              aA=0, 
                              AA=0 ),
                   description = paste( habitat.description, "
@@ -17,5 +17,6 @@ pop <- population(
     - only good habitat areas are accessible and habitable
 ", sep="\n")
              )
+pop$N[,"aa"] <- rpois(sum(habitable),pop$carrying.capacity)
 
 
