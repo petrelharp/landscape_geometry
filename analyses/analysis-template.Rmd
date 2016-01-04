@@ -97,7 +97,7 @@ radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( 
 
 
 Choose a location for a single mutation, and make sure it establishes:
-```{r init_muts, fig.width=fig.dim, cache=TRUE, dependson="analysis_setup"}
+```{r init_muts, fig.width=fig.dim, cache=TRUE, dependson="analysis_setup", cache.lazy=FALSE}
 mutloc <- list( cell.number=sample.int(nhabitable(pop),1) )
 mutloc$center <- SpatialPoints(xyFromCell(pop$habitat,which(pop$habitable)[mutloc$cell.number]))
 dists <- pointDistance( mutloc$center, xyFromCell(pop$habitat,which(pop$habitable)), lonlat=FALSE )
@@ -234,7 +234,7 @@ floor(ctab)
 
 
 Sample and initiate mutations:
-```{r sample_muts, fig.width=fig.dim, cache=TRUE, dependson="analysis_setup"}
+```{r sample_muts, fig.width=fig.dim, cache=TRUE, dependson="analysis_setup", cache.lazy=FALSE}
 nhood.radius <- 1000
 many.sims <- this.lapply( 1:36, function (dummy) {
         nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=60, 

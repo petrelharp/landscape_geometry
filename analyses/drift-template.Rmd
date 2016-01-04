@@ -63,7 +63,7 @@ names(census.funs) <- paste("r",radii,sep='')
 and run the simulation;
 note that by default, `pop$N` starts with all individuals *aa*,
 so first we spread these out to other genotypes:
-```{r run_sim, cache=TRUE, dependson="pick_centers"}
+```{r run_sim, cache=TRUE, dependson="pick_centers", cache.lazy=FALSE}
 pop$N[] <- rpois( length(pop$N), outer(pop$N[,1],c(1/4,1/2,1/4),"*") )
 sim <- simulate_pop( pop, demog, times=seq(0,1000,length.out=201),
                  summaries= c( unlist(census.funs), 

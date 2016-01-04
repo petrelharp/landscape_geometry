@@ -20,7 +20,7 @@ demog <- demography(
         pollen.migration = migration(
                             kern = "gaussian",
                             sigma = 200,
-                            radius = 600,
+                            radius = 2000,
                             normalize = NULL,
                             n=9
                      ),

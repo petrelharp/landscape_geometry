@@ -115,6 +115,7 @@ run_template <- function ( template,
 
 cat(paste(commandArgs(),collapse=" "),"\n")
 
+# if debugging interactively, define 'args'
 args <- if (interactive()) { args } else { commandArgs(TRUE) }
 if (length(args)<2) { stop(usage) }
 
