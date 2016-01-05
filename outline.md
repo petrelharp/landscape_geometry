@@ -294,7 +294,7 @@ do
     for DIST in long short
     do
         #echo "\
-./templated.R analysis-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-densit_analysis..html \
+./templated.R analysis-template.Rmd mojave_central/$HAB/${DIST}-distance-medium-density_analysis.html \
 habitats/central_mojave_${HAB}.R populations/medium-density.R demographies/${DIST}-distance-gaussian.R
 #"
     done

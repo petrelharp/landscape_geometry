@@ -118,7 +118,7 @@ if (total.aA==0) { stop(paste("Failed to establish after",ntries,"tries.")) }
 ```
 
 Now, run longer:
-```{r run_longer, cache=TRUE, dependson="init_muts"}
+```{r run_longer, cache=TRUE, dependson="init_muts", cache.lazy=FALSE}
 sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=91)[-1],
                  summaries= list( 
                              totals=function(N){ colSums(N) },
