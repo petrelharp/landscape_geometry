@@ -1,4 +1,6 @@
 ## Make a smallish number of layers of various combinations from the Western Mojave layer
+#
+# NOTE: set TMPDIR to a partition with lots of space before running
 
 library(rgdal)
 library(raster)
