@@ -5,7 +5,7 @@ base.carrying.capacity <- 100/(100^2)  # per square meter
 pop <- population( 
                   habitat = habitat,
                   # accessible = !is.na(values(habitat)),
-                  accessible = habitable,
+                  accessible = rep(TRUE,ncell(habitat)),
                   habitable = habitable,
                   genotypes = c("aa","aA","AA"),
                   carrying.capacity = base.carrying.capacity * prod(res(habitat)) * values(habitat)[habitable],

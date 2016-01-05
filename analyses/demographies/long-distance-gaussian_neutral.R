@@ -19,16 +19,15 @@ demog <- demography(
         prob.survival = 0.9,
         pollen.migration = migration(
                             kern = "gaussian",
-                            sigma = 5000,
-                            radius = 1000,
+                            sigma = 500,
+                            radius = 500,
                             normalize = 1,
-                            # n.weights = 0.01 * 0.99^(1:30)
-                            n.weights = c(rep(0,29),1)
+                            n.weights = 0.01 * 0.99^(1:30)
                      ),
         seed.migration = migration(
                             kern = "gaussian",
                             sigma = 500,
-                            radius = 1000,
+                            radius = 500,
                             normalize = 1,
                             n.weights=0.75 * 0.25^(1:12)
                      ),
