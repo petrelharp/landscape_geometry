@@ -22,14 +22,14 @@ demog <- demography(
                             sigma = 300,
                             radius = 1000,
                             normalize = NULL,
-                            n=4
+                            n.weights=c(rep(0,8),1)
                      ),
         seed.migration = migration(
                             kern = "gaussian",
                             sigma = 400,
                             radius = 1500,
                             normalize = 1,
-                            n=9
+                            n.weights=c(rep(0,3),1)
                      ),
         genotypes = c("aa","aA","AA"),
         description = "

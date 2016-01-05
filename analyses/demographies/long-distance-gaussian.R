@@ -21,15 +21,15 @@ demog <- demography(
                             kern = "gaussian",
                             sigma = 200,
                             radius = 600,
-                            normalize = NULL,
-                            n=9
+                            normalize = NULL
+                            n.weights=c(rep(0,8),1)
                      ),
         seed.migration = migration(
                             kern = "gaussian",
                             sigma = 200,
                             radius = 600,
                             normalize = 1,
-                            n=6  # sqrt(6)*200 = 489
+                            n.weights=c(rep(0,5),1) # sqrt(6)*200 = 489
                      ),
         genotypes = c("aa","aA","AA"),
         description = "

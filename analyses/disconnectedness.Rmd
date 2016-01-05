@@ -1,0 +1,134 @@
+---
+title: "Habitat shapes for central Mojave"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 4
+knitr::opts_chunk$set(
+              fig.width=2*fig.dim,
+              fig.height=fig.dim,
+              fig.align='center',
+              error=FALSE )
+library(Matrix)
+library(raster)
+library(rgeos)
+library(landsim)
+```
+
+Consider the **saline** habitat in the central Mojave:
+```{r setup_demog, cache=TRUE}
+source("habitats/central_mojave_saline.R",chdir=TRUE)
+source("populations/high-density.R",chdir=TRUE)
+source("demographies/long-distance-gaussian_neutral.R")
+demog <- setup_demography(demog,pop)
+```
+
+This habitat is broken up into pieces.
+
+One iteration of the migration matrix
+=====================================
+
+Suppose we only used one iteration of the migration matrix.
+How much migration is there between the disconnected pieces?
+```{r clump_habitat, fig.height=2*fig.dim, fig.width=2*fig.dim, cache=TRUE, depends="setup_demog"}
+habclumps <- clump(pop$habitat)
+# matrix of pairwise total migration rates between clumps
+clumpmig <- matrix( nrow=length(unique(values(habclumps)[pop$habitable])), ncol=length(unique(values(habclumps)[pop$habitable])) )
+for (k in 1:nrow(clumpmig)) {
+    kk <- which( values(habclumps)[habitable] == k )
+    clumpmig[k,] <- tapply( colSums( demog$pollen.migration$M[kk,demog$pollen.migration$habitable.inds,drop=FALSE] ), values(habclumps)[pop$habitable], sum )
+}
+diag(clumpmig) <- NA
+# use '%&%' to find equivalency classes of connecteds
+clump.adj <- (clumpmig>0)
+diag(clump.adj) <- TRUE
+clump.clump <- clump.adj
+for (k in 1:10) {
+    clump.clump <-  clump.clump %&% clump.clump
+}
+# here are the clusters of communicating elements
+clump.clusters <- unique(apply(clump.clump,1,which))
+cluster.num <- numeric(nrow(clumpmig))
+cluster.num[ unlist(clump.clusters) ] <- rep(seq_along(clump.clusters),sapply(clump.clusters,length))
+habclusters <- habclumps
+values(habclusters) <- cluster.num[values(habclumps)]
+# number of clumps per cluster
+table(table(cluster.num))
+cluster.cols <- sample(rainbow(length(clump.clusters)))
+plot(habclusters,col=cluster.cols)
+```
+
+How far are the closest ones apart?
+Note these are distances between *representative* points, not the shortest distances.
+```{r clump_dists, fig.height=2*fig.dim, fig.width=2*fig.dim, cache=TRUE, depends="clump_habitat"}
+# matrix of pairwise distances between clumps
+refcells <- sapply( 1:nrow(clumpmig), function (k) { sample(which(values(habclumps)==k),1) } )
+refpoints <- xyFromCell( pop$habitat, refcells )
+clumpdist <- pointDistance( refpoints, lonlat=FALSE, allpairs=TRUE )
+diag(clumpdist) <- NA
+```
+
+Let's see which the clumps would be if we allowed migration up to a certain distance.
+```{r clump_sizes, fig.height=2*fig.dim, fig.width=2*fig.dim}
+clump_cutoff <- function (maxdist,clumpdist,...) {
+    adj <- as( ( is.na(clumpdist) | ( clumpdist < maxdist ) ), "ngCMatrix" )
+    for (k in 1:10) { adj <- adj %&% adj }
+    clump.clusters <- unique(apply(adj,1,which))
+    cluster.num <- numeric(nrow(clumpdist))
+    cluster.num[ unlist(clump.clusters) ] <- rep( seq_along(clump.clusters),
+                                                 sapply(clump.clusters,length) )
+    habclusters <- habclumps
+    values(habclusters) <- cluster.num[values(habclumps)]
+    cluster.cols <- sample(rainbow(length(clump.clusters)))
+    plot(habclusters,col=cluster.cols,...)
+    return(habclusters)
+}
+clump_cutoff(5000,clumpdist)
+clump_cutoff(15000,clumpdist)
+clump_cutoff(25000,clumpdist)
+clump_cutoff(37000,clumpdist)
+```
+
+
+Many iterations of the migration matrix
+=====================================
+
+In fact, `pollen.migration` applies the migration matrix `r length(demog$pollen.migration$n.weights)` times.
+How much migration is there now?
+We'll find this out by putting mass 1 on each clump, migrating it forward by one step,
+and seeing where mass ends up.
+```{r clump_habitat, fig.height=2*fig.dim, fig.width=2*fig.dim, cache=TRUE, depends="setup_demog"}
+clumpmig2 <- sapply( unique(values(habclumps)[pop$habitable]), function (k) {
+        x <- ifelse( values(habclumps)[pop$habitable] == k, 1, 0 )
+        x <- x/sum(x)
+        y <- migrate( x, demog$pollen.migration )
+        tapply( y, values(habclumps)[pop$habitable], sum )
+      } )
+# use '%&%' to find equivalency classes of connecteds
+clump2.adj <- (clumpmig2>0)
+diag(clump2.adj) <- TRUE
+clump2.clump <- clump2.adj
+for (k in 1:10) {
+    clump2.clump <-  clump2.clump %&% clump2.clump
+}
+# here are the clusters of communicating elements
+clump2.clusters <- unique(apply(clump2.clump,1,which))
+cluster.num2 <- numeric(nrow(clumpmig2))
+cluster.num2[ unlist(clump2.clusters) ] <- rep(seq_along(clump2.clusters),sapply(clump2.clusters,length))
+habclusters2 <- habclumps
+values(habclusters2) <- cluster.num[values(habclumps)]
+# number of clumps per cluster
+table(table(cluster.num2))
+cluster.cols2 <- sample(rainbow(length(clump2.clusters)))
+plot(habclusters2,col=cluster.cols2)
+```
+
+Let's look at how they break up when splitting up along different migration rates:
+```{r clump_probs, fig.height=2*fig.dim, fig.width=2*fig.dim}
+clump_cutoff(0.01,clumpmig2,main="connected by 1/100 migration")
+clump_cutoff(0.001,clumpmig2,main="connected by 1/1000 migration")
+clump_cutoff(0.0001,clumpmig2,main="connected by 1/10,000 migration")
+clump_cutoff(1e-6,clumpmig2,main="connected by 1/1,000,000 migration")
+```

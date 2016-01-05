@@ -19,17 +19,18 @@ demog <- demography(
         prob.survival = 0.9,
         pollen.migration = migration(
                             kern = "gaussian",
-                            sigma = 200,
-                            radius = 2000,
-                            normalize = NULL,
-                            n=9
+                            sigma = 5000,
+                            radius = 1000,
+                            normalize = 1,
+                            # n.weights = 0.01 * 0.99^(1:30)
+                            n.weights = c(rep(0,29),1)
                      ),
         seed.migration = migration(
                             kern = "gaussian",
-                            sigma = 200,
-                            radius = 600,
+                            sigma = 500,
+                            radius = 1000,
                             normalize = 1,
-                            n=6  # sqrt(6)*200 = 489
+                            n.weights=0.75 * 0.25^(1:12)
                      ),
         genotypes = c("aa","aA","AA"),
         description = "

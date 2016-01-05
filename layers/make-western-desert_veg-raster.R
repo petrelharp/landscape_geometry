@@ -69,13 +69,13 @@ dev.off()
 
 ## make layers for each
 ## TAKES A LONG TIME
-veg.rasters <- lapply( types, function (tt) {
-                cat(tt,"\n")
-                rasterize(subset(vegmap,Partition==tt),raster(extent(vegmap),res=100),getCover=TRUE)
-            } )
-names(veg.rasters) <- types
-
-for (k in seq_along(veg.rasters)) {
-    writeRaster(veg.rasters[[k]],file=paste("cleaned/desert_veg-western-",gsub("/","_",types[k]),".tif",sep=''),format="GTiff", overwrite=TRUE)
-    # writeRaster(veg.rasters[[k]],file=paste("cleaned/desert_veg-western-",gsub("/","_",types[k]),".grd",sep=''),format="raster", overwrite=TRUE)
+for (tt in types) {
+        cat(tt,"\n")
+        x <- rasterize( subset(vegmap,Partition==tt),
+                   raster(extent(vegmap),res=200), getCover=TRUE )
+        x[x==0] <- NA
+        writeRaster( x,
+                    file=paste("cleaned/desert_veg-western-",gsub("/","_",tt),".tif",sep=''),
+                    format="GTiff", overwrite=TRUE)
 }
+
