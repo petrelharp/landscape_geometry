@@ -1,0 +1,132 @@
+---
+title: "Raster habitat shapes"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 5
+knitr::opts_chunk$set(
+              fig.width=2*fig.dim,
+              fig.height=fig.dim,
+              fig.align='center',
+              error=FALSE )
+library(Matrix)
+library(raster)
+library(rgeos)
+library(landsim)
+library(RColorBrewer)
+library(rgdal)
+```
+
+# Habitat shape statistics
+
+We'd like to display the following statistics:
+
+1.  Volume-radius relationship: 
+    $\eta(x,r) = | H \bigcap B_{x,r} |$
+
+2.  Patch size:
+    let $N(x,r)$ be the area of everything 
+    reachable without taking a jump of distance greater than $r$
+    
+```{r ex_habitat_setup}
+area.units <- 1e4  # work in hectares
+vegmap <- readOGR("../layers/desert_veg/western/ds735.gdb","ds735")
+```
+
+## Volume-radius relationship
+
+Here's how to find the sum of the habitat values within a given circle:
+```{r one_circle, fig.width=fig.dim}
+vegtype <- "Madrean Warm Semi-Desert Wash Woodland/Scrub"
+thisveg <- subset( vegmap, NVCSMG==vegtype )
+refpoints <- spsample( thisveg, n=1, type='random' )
+refcircles <- make_circles( refpoints, radii=15000, proj4string=CRS(proj4string(refpoints)) )
+habcircles <- gIntersection( refcircles, thisveg )
+refarea <- sum( sapply( habcircles@polygons, function (x) { x@area } ) )/area.units
+
+# for plotting
+nhab <- crop( thisveg, 2*extent(refcircles) )
+
+plot( nhab, col="grey", border=NA )
+plot( habcircles, col=adjustcolor("red",0.5), add=TRUE, border=NA )
+lines(refcircles, col='red')
+points(refpoints,pch="*", col='red')
+text( refpoints, labels=sprintf("intersection area: %0.0f ha", refarea) )
+```
+
+Here's what it looks like for many radii:
+```{r stats}
+radii <- 1000 * c( 0.5, 1, 2, 4, 8, 10 )  # in km
+refpoints <- sample_neighborhoods( habitat, n=1, radius=radii[length(radii)] )
+refarea <- sapply( radii, function (r) {
+        sapply( seq_len(length(refpoints$centers)), function (k) {
+              extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
+    } )
+
+layout(t(1:2))
+nhab <- crop( habitat, 2*extent(refpoints$neighborhoods) )
+plot( nhab, col=grey(seq(1,0.5,length.out=100)), legend=FALSE )
+points( refpoints$centers, pch="*" )
+for (k in seq_along(radii)) {
+    circles <- make_circles( refpoints$centers, radii=radii[k], proj4string=CRS(proj4string(nhab)) )
+    ## offset for some reason??
+    # plot( mask( nhab, circles ), col=adjustcolor(colorRampPalette(c("white","red"))(64),alpha=0.2), add=TRUE, legend=FALSE )
+    lines(circles)
+}
+plot( cbind( radius=radii, area=refarea ), type='b' )
+lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, col='red' ) 
+```
+
+Now, we'll do it for many points:
+```{r many_points, cache=TRUE}
+refpoints <- sample_neighborhoods( mask(habitat,habitat,maskvalue=0), n=100, radius=1000 )  # takes about a second per center
+refarea <- sapply( radii, function (r) {
+        sapply( seq_len(length(refpoints$centers)), function (k) {
+              extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
+    } )
+# summaries
+sumarea <- t( apply( refarea, 1, quantile, c(0.05, 0.25, 0.5, 0.75, 0.95) ) )
+
+layout(t(1:2))
+plot(habitat)
+points(refpoints$centers)
+lines(refpoints$neighborhoods)
+matplot( radii, t(refarea), type='l', xlab='radius (m)', ylab='area (ha)', lty=1 )
+lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, lty=3, lwd=2 ) 
+matlines( sumarea, lty=2, lwd=2, col='green' )
+```
+
+Now, we'll do this for each habitat:
+```{r all_habitats, cache=TRUE}
+layer.files <- list.files("../layers/cleaned",full.names=TRUE)
+area.results <- lapply( layer.files, function (lf) {
+        habitat <- raster("../layers/cleaned/desert_veg-western-scrub.tif")
+        refpoints <- sample_neighborhoods( habitat, n=100, radius=300 )  # takes about a second per center
+        refarea <- sapply( radii, function (r) {
+                sapply( seq_len(length(refpoints$centers)), function (k) {
+                      extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
+            } )
+        return( refarea )
+    } )
+names( area.results=basename(layer.files) )
+```
+
+Here are the results:
+```{r all_results}
+area.05 <- sapply( area.results, quantile, 0.05 )
+area.25 <- sapply( area.results, quantile, 0.25 )
+area.50 <- sapply( area.results, quantile, 0.5 )
+area.75 <- sapply( area.results, quantile, 0.75 )
+area.95 <- sapply( area.results, quantile, 0.95 )
+# plot
+pp <- function (bottom,top,...) { polygon( x=c(radii,rev(radii)), y=c(rev(bottom),top), ... ) }
+lcols <- brewer.pal(n=length(layer.files),pal="Set2")
+matplot( radii, area.50, lty=1, col=lcols, ylim=range(0,area.95) )
+for (k in seq_along(layer.files)) {
+    pp( area.25[,k], area.75[,k], col=adjustcolor(lcols[k],0.5) )
+    pp( area.05[,k], area.95[,k], col=adjustcolor(lcols[k],0.2) )
+}
+legend("topleft", lty=1, col=lcols, legend=basename(layer.files))
+```
