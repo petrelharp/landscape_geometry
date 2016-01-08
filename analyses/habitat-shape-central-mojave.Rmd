@@ -134,7 +134,7 @@ vegtype.areas <- tapply( vegmap$AREA_, vegmap$LABEL_1, sum )
 vegtype.list <- names( sort(vegtype.areas,decreasing=TRUE)[1:15] )
 poly.area <- function (poly) { sapply( seq_along(poly), function (k) { sum( sapply( poly[k]@polygons, function (x) { x@area } ) ) } ) }
 area.results <- lapply( vegtype.list, function (vegtype) {
-        thisveg <- gBuffer( subset( vegmap, NVCSMG==vegtype ), width=0 )
+        thisveg <- gBuffer( subset( vegmap, LABEL_1==vegtype ), width=0 )
         refpoints <- spsample( thisveg, n=100, type='random' )
         refcircles <- make_circles( refpoints, radii=radii[1], proj4string=CRS(proj4string(refpoints)) )
         habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
