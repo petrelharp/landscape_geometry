@@ -15,7 +15,7 @@ library(Matrix)
 library(raster)
 library(rgeos)
 library(landsim)
-library(RColorBrewer)
+library(colorspace)
 ```
 
 # Habitat shape statistics
@@ -99,32 +99,37 @@ matlines( sumarea, lty=2, lwd=2, col='green' )
 Now, we'll do this for each habitat:
 ```{r all_habitats, cache=TRUE}
 layer.files <- list.files("../layers/cleaned",full.names=TRUE)
+layer.names <- gsub("-",": ",gsub("_"," ",gsub("_broad_.*","",gsub("desert_veg-","",gsub("[.].*$","",basename(layer.files))))))
 area.results <- lapply( layer.files, function (lf) {
-        habitat <- raster("../layers/cleaned/desert_veg-western-scrub.tif")
-        refpoints <- sample_neighborhoods( habitat, n=100, radius=300 )  # takes about a second per center
+        habitat <- raster(lf)
+        refpoints <- sample_neighborhoods( mask(habitat,habitat,maskvalue=0), n=100, radius=300 )
+        # takes about a second per center
         refarea <- sapply( radii, function (r) {
                 sapply( seq_len(length(refpoints$centers)), function (k) {
                       extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
             } )
         return( refarea )
     } )
-names( area.results=basename(layer.files) )
+names(area.results) <- layer.names
 ```
 
 Here are the results:
 ```{r all_results}
-area.05 <- sapply( area.results, quantile, 0.05 )
-area.25 <- sapply( area.results, quantile, 0.25 )
-area.50 <- sapply( area.results, quantile, 0.5 )
-area.75 <- sapply( area.results, quantile, 0.75 )
-area.95 <- sapply( area.results, quantile, 0.95 )
+area.05 <- sapply( area.results, apply, 2, quantile, probs=0.05 )
+area.25 <- sapply( area.results, apply, 2, quantile, probs=0.25 )
+area.50 <- sapply( area.results, apply, 2, quantile, probs=0.5 )
+area.75 <- sapply( area.results, apply, 2, quantile, probs=0.75 )
+area.95 <- sapply( area.results, apply, 2, quantile, probs=0.95 )
 # plot
-pp <- function (bottom,top,...) { polygon( x=c(radii,rev(radii)), y=c(rev(bottom),top), ... ) }
-lcols <- brewer.pal(n=length(layer.files),pal="Set2")
-matplot( radii, area.50, lty=1, col=lcols, ylim=range(0,area.95) )
+pp <- function (bottom,top,...) { polygon( x=c(radii,rev(radii)), y=c(bottom,rev(top)), ... ) }
+lcols <- sample(rainbow_hcl(length(layer.files)))
+matplot( radii, area.50, type='l', pch=20, lty=1, col=lcols, xlab="radius (m)", ylab="area (ha)", ylim=range(0,area.95) )
 for (k in seq_along(layer.files)) {
-    pp( area.25[,k], area.75[,k], col=adjustcolor(lcols[k],0.5) )
-    pp( area.05[,k], area.95[,k], col=adjustcolor(lcols[k],0.2) )
+    matlines( radii, area.25, lty=2, col=lcols )
+    matlines( radii, area.75, lty=2, col=lcols )
+    # pp( area.25[,k], area.75[,k], col=adjustcolor(lcols[k],0.5) )
+    # pp( area.05[,k], area.95[,k], col=adjustcolor(lcols[k],0.2) )
 }
-legend("topleft", lty=1, col=lcols, legend=basename(layer.files))
+lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, lty=3, lwd=2 ) 
+legend("topleft", lty=1, col=lcols, legend=layer.names)
 ```

@@ -1,5 +1,5 @@
 ---
-title: "Raster habitat shapes"
+title: "Western Mojave Habitat Shapes"
 author: "Peter Ralph"
 date: "`r Sys.Date()`"
 ---
@@ -33,6 +33,10 @@ We'd like to display the following statistics:
 ```{r ex_habitat_setup}
 area.units <- 1e4  # work in hectares
 vegmap <- readOGR("../layers/desert_veg/western/ds735.gdb","ds735")
+source("../layers/layer_utils.R",chdir=TRUE)
+counties <- get_counties(vegmap)
+elev <- get_dem(vegmap)
+shade <- get_elev(vegmap)
 ```
 
 ## Volume-radius relationship
@@ -49,65 +53,89 @@ refarea <- sum( sapply( habcircles@polygons, function (x) { x@area } ) )/area.un
 # for plotting
 nhab <- crop( thisveg, 2*extent(refcircles) )
 
-plot( nhab, col="grey", border=NA )
+plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.5), legend=FALSE )
+plot( nhab, col="grey", border=NA, add=TRUE )
 plot( habcircles, col=adjustcolor("red",0.5), add=TRUE, border=NA )
+lines(counties,lty=2,col=adjustcolor("black",0.5))
+lines(elev,col=adjustcolor('grey',0.5))
 lines(refcircles, col='red')
 points(refpoints,pch="*", col='red')
-text( refpoints, labels=sprintf("intersection area: %0.0f ha", refarea) )
+text( refpoints, labels=sprintf("intersection area: %0.0f ha", refarea), pos=4 )
 ```
 
 Here's what it looks like for many radii:
 ```{r stats}
-radii <- 1000 * c( 0.5, 1, 2, 4, 8, 10 )  # in km
-refpoints <- sample_neighborhoods( habitat, n=1, radius=radii[length(radii)] )
-refarea <- sapply( radii, function (r) {
-        sapply( seq_len(length(refpoints$centers)), function (k) {
-              extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
+radii <- sort( 1000 * c( 0.125, 0.25, 0.5, 1, 2, 4, 8, 16 ), decreasing=TRUE ) # in km
+habcircle.list <- vector(length(radii),mode='list')
+refcircles <- make_circles( refpoints, radii=radii[1], proj4string=CRS(proj4string(refpoints)) )
+habcircle.list[[1]] <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
+for (k in seq_along(radii)[-1]) {
+    refcircles <- make_circles( refpoints, radii=radii[k], proj4string=CRS(proj4string(refpoints)) )
+    habcircle.list[[k]] <- ( gIntersection( refcircles, habcircle.list[[k-1]], byid=c(TRUE,FALSE) ) )
+} 
+refarea <- sapply( habcircle.list, function (habcircles) {
+          sapply( seq_along(habcircles), function (k) {
+                            sum( sapply( habcircles[k]@polygons, function (x) { x@area } ) )/area.units
+              } )
     } )
 
 layout(t(1:2))
-nhab <- crop( habitat, 2*extent(refpoints$neighborhoods) )
-plot( nhab, col=grey(seq(1,0.5,length.out=100)), legend=FALSE )
-points( refpoints$centers, pch="*" )
+nhab <- crop( thisveg, 2*extent(habcircle.list[[1]]) )
+plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.5), 
+     legend=FALSE, xlim=c(xmin(nhab),xmax(nhab)), ylim=c(ymin(nhab),ymax(nhab)) )
+plot( nhab, col=grey(seq(1,0.5,length.out=100)), add=TRUE )
+points( refpoints, col='red', cex=2 )
 for (k in seq_along(radii)) {
-    circles <- make_circles( refpoints$centers, radii=radii[k], proj4string=CRS(proj4string(nhab)) )
-    ## offset for some reason??
-    # plot( mask( nhab, circles ), col=adjustcolor(colorRampPalette(c("white","red"))(64),alpha=0.2), add=TRUE, legend=FALSE )
-    lines(circles)
+    plot(habcircle.list[[k]], col=adjustcolor("red",0.5), border=NA, add=TRUE)
+    circles <- make_circles( refpoints, radii=radii[k], proj4string=CRS(proj4string(nhab)) )
+    lines(circles, col='red')
 }
+lines(counties,lty=2,col=adjustcolor("black",0.5))
+lines(elev,col=adjustcolor('grey',0.5))
 plot( cbind( radius=radii, area=refarea ), type='b' )
 lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, col='red' ) 
 ```
 
 Now, we'll do it for many points:
 ```{r many_points, cache=TRUE}
-refpoints <- sample_neighborhoods( mask(habitat,habitat,maskvalue=0), n=100, radius=1000 )  # takes about a second per center
-refarea <- sapply( radii, function (r) {
-        sapply( seq_len(length(refpoints$centers)), function (k) {
-              extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
-    } )
+refpoints <- spsample( thisveg, n=30, type='random' )  # this will take about 90 sec/ point
+refcircles <- make_circles( refpoints, radii=radii[1], proj4string=CRS(proj4string(refpoints)) )
+habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
+refarea <- matrix( 0, nrow=length(refpoints), ncol=length(radii) )
+refarea[,1] <- sapply( seq_along(habcircles), function (k) {
+                sum( sapply( habcircles[k]@polygons, function (x) { x@area } ) )/area.units
+  } )
+for (j in seq_along(radii)[-1]) {
+    refcircles <- make_circles( refpoints, radii=radii[j], proj4string=CRS(proj4string(refpoints)) )
+    habcircles <- ( gIntersection( refcircles, habcircles, byid=c(TRUE,FALSE) ) )
+    refarea[,j] <- sapply( seq_along(habcircles), function (k) {
+                    sum( sapply( habcircles[k]@polygons, function (x) { x@area } ) )/area.units
+      } )
+}
+
 # summaries
 sumarea <- t( apply( refarea, 1, quantile, c(0.05, 0.25, 0.5, 0.75, 0.95) ) )
 
 layout(t(1:2))
 plot(habitat)
-points(refpoints$centers)
-lines(refpoints$neighborhoods)
+points(refpoints, pch="*")
 matplot( radii, t(refarea), type='l', xlab='radius (m)', ylab='area (ha)', lty=1 )
 lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, lty=3, lwd=2 ) 
 matlines( sumarea, lty=2, lwd=2, col='green' )
 ```
 
-Now, we'll do this for each habitat:
+Now, we'll do this for each vegetation type:
 ```{r all_habitats, cache=TRUE}
-layer.files <- list.files("../layers/cleaned",full.names=TRUE)
-area.results <- lapply( layer.files, function (lf) {
-        habitat <- raster("../layers/cleaned/desert_veg-western-scrub.tif")
-        refpoints <- sample_neighborhoods( habitat, n=100, radius=300 )  # takes about a second per center
-        refarea <- sapply( radii, function (r) {
-                sapply( seq_len(length(refpoints$centers)), function (k) {
-                      extract( habitat, refpoints$centers[k], buffer=r, fun=sum ) } )/area.units
-            } )
+vegtype.areas <- tapply( vegmap$Area, vegmap$NVCSMG, sum )
+vegtype.list <- names( sort(vegtype.areas)[1:15] )
+area.results <- lapply( levels(vegmap$NVCSMG), function (vegtype) {
+    thisveg <- subset( vegmap, NVCSMG==vegtype )
+    refpoints <- spsample( thisveg, n=100, type='random' )
+          refcircles <- make_circles( refpoints, radii=r, proj4string=CRS(proj4string(refpoints)) )
+          habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
+          sapply( seq_along(habcircles), function (k) {
+                            sum( sapply( habcircles[k]@polygons, function (x) { x@area } ) )/area.units
+              } )
         return( refarea )
     } )
 names( area.results=basename(layer.files) )
