@@ -98,7 +98,7 @@ lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/a
 
 Now, we'll do it for many points:
 ```{r many_points, cache=TRUE}
-refpoints <- spsample( thisveg, n=30, type='random' )  # this will take about 90 sec/ point
+refpoints <- spsample( thisveg, n=40, type='random' )  # this will take about 90 sec/ point
 refcircles <- make_circles( refpoints, radii=radii[1], proj4string=CRS(proj4string(refpoints)) )
 habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
 refarea <- matrix( 0, nrow=length(refpoints), ncol=length(radii) )
@@ -114,31 +114,39 @@ for (j in seq_along(radii)[-1]) {
 }
 
 # summaries
-sumarea <- t( apply( refarea, 1, quantile, c(0.05, 0.25, 0.5, 0.75, 0.95) ) )
+sumarea <- t( apply( refarea, 2, quantile, c(0.05, 0.25, 0.5, 0.75, 0.95) ) )
 
 layout(t(1:2))
-plot(habitat)
-points(refpoints, pch="*")
+plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.25), legend=FALSE )
+plot( thisveg, col=grey(seq(.8,0.25,length.out=100)), border=NA, add=TRUE )
+points( refpoints, col='red', cex=2 )
+lines(counties,lty=2,col=adjustcolor("black",0.5))
+lines(elev,col=adjustcolor('grey',0.5))
 matplot( radii, t(refarea), type='l', xlab='radius (m)', ylab='area (ha)', lty=1 )
 lines( seq(0,max(radii),length.out=300), pi*seq(0,max(radii),length.out=300)^2/area.units, lty=3, lwd=2 ) 
-matlines( sumarea, lty=2, lwd=2, col='green' )
+matlines( radii, sumarea, lty=2, lwd=2 )
 ```
 
 Now, we'll do this for each vegetation type:
 ```{r all_habitats, cache=TRUE}
-vegtype.areas <- tapply( vegmap$Area, vegmap$NVCSMG, sum )
-vegtype.list <- names( sort(vegtype.areas)[1:15] )
-area.results <- lapply( levels(vegmap$NVCSMG), function (vegtype) {
-    thisveg <- subset( vegmap, NVCSMG==vegtype )
-    refpoints <- spsample( thisveg, n=100, type='random' )
-          refcircles <- make_circles( refpoints, radii=r, proj4string=CRS(proj4string(refpoints)) )
-          habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
-          sapply( seq_along(habcircles), function (k) {
-                            sum( sapply( habcircles[k]@polygons, function (x) { x@area } ) )/area.units
-              } )
+vegtype.areas <- tapply( vegmap$Shape_Area, vegmap$NVCSMG, sum )
+vegtype.list <- names( sort(vegtype.areas,decreasing=TRUE)[1:15] )
+poly.area <- function (poly) { sapply( seq_along(poly), function (k) { sum( sapply( poly[k]@polygons, function (x) { x@area } ) ) } ) }
+area.results <- lapply( vegtype.list, function (vegtype) {
+        thisveg <- subset( vegmap, NVCSMG==vegtype )
+        refpoints <- spsample( thisveg, n=4, type='random' )
+        refcircles <- make_circles( refpoints, radii=radii[1], proj4string=CRS(proj4string(refpoints)) )
+        habcircles <- gIntersection( refcircles, thisveg, byid=c(TRUE,FALSE) )
+        refarea <- matrix( 0, nrow=length(refpoints), ncol=length(radii) )
+        refarea[,1] <- poly.area(habcircles)/area.units
+        for (j in seq_along(radii)[-1]) {
+            refcircles <- make_circles( refpoints, radii=radii[j], proj4string=CRS(proj4string(refpoints)) )
+            habcircles <- ( gIntersection( refcircles, habcircles, byid=c(TRUE,FALSE) ) )
+            refarea[,j] <- poly.area(habcircles)/area.units
+        }
         return( refarea )
     } )
-names( area.results=basename(layer.files) )
+names( area.results ) <- vegtype.list
 ```
 
 Here are the results:
@@ -157,4 +165,8 @@ for (k in seq_along(layer.files)) {
     pp( area.05[,k], area.95[,k], col=adjustcolor(lcols[k],0.2) )
 }
 legend("topleft", lty=1, col=lcols, legend=basename(layer.files))
+```
+
+```{r table_results}
+dput( area.results )
 ```
