@@ -76,9 +76,9 @@ pop$N[] <- sim$N[,,2]
 ```
 
 Here is a function to initiate and track many mutations:
-```{r setup_mutation_sim}
-n.sims <- 36
-points.per.sim <- 60
+```{r setup_mutation_sim, cache=TRUE}
+n.sims <- 100
+points.per.sim <- 20
 sim_estab <- function (pop, demog) {
     nhood.radius <- 1000
     many.sims <- lapply( 1:n.sims, function (dummy) {
@@ -101,7 +101,7 @@ sim_estab <- function (pop, demog) {
 ```
 
 Now let's apply it across a range of $s$:
-```{r different_s, cache=TRUE}
+```{r different_s, cache=TRUE, depends="setup_mutation_sim"}
 svals <- seq(.025,.4,length.out=25)
 s.sims <- lapply( svals, function (s) {
                  demog$prob.germination$s <- s
@@ -117,8 +117,8 @@ cbind( s=svals, p_estab=sapply( s.sims, function (x) { mean(x$established) } ) )
 Here are the results:
 ```{r plot_interp_prob, fig.height=1.5*fig.dim, fig.width=1.5*fig.dim}
 for (k in seq_along(s.sims)) {
-    plot( habitat )
-    points(s.sims[[k]]$sim.results$centers,pch=20,col=adjustcolor(1+s.sims[[k]]$sim.results$established,0.5))
+    plot( habitat, main=sprintf("s=%f",svals[k]) )
+    points(s.sims[[k]]$centers,pch=20,col=adjustcolor(1+s.sims[[k]]$established,0.5))
 }
 ```
 
@@ -129,7 +129,7 @@ for (k in seq_along(s.sims)) {
 
 Here are the probabilities, and also
 coordinates of mutations, along with whether they established:
-```{r results}
+```{r results, comment=NA}
 dput( cbind( s=svals, p_estab=sapply( s.sims, function (x) { mean(x$established) } ) ) )
 dput(svals)
 dput( s.sims )
