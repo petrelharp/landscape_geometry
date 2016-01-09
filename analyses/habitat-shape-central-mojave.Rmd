@@ -53,7 +53,7 @@ refarea <- sum( sapply( habcircles@polygons, function (x) { x@area } ) )/area.un
 # for plotting
 nhab <- crop( thisveg, 2*extent(refcircles) )
 
-plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.2), add=TRUE,
+plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.5), 
      legend=FALSE, xlim=c(xmin(nhab),xmax(nhab)), ylim=c(ymin(nhab),ymax(nhab)) )
 plot( nhab, col="grey", border=NA, add=TRUE )
 plot( habcircles, col=adjustcolor("red",0.5), add=TRUE, border=NA )
@@ -172,6 +172,17 @@ legend("topleft", lty=1, col=lcols, legend=vegtype.list, cex=0.5)
 par(opar)
 ```
 
-```{r table_results}
-( area.results )
+Here is the *proportion of the circle covered* as a function of its radius.
+```{r proportion_covered}
+mean.areas <-  sapply( area.results, colMeans )
+layout(t(1:2),width=c(3,1))
+matplot(radii, area.units*mean.areas/(pi*radii^2), type='l', log='x', ylab="proportion of circle covered", xlab="radius")
+opar <- par(mar=c(par("mar"),0)[c(1,5,3,5)])
+plot(0,xaxt='n',yaxt='n',xlab='',ylab='',type='n')
+legend("topleft",legend=colnames(mean.areas),lty=1:5,col=1:6)
+```
+
+
+```{r table_results, comment=NA}
+dput( area.results )
 ```
