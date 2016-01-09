@@ -13,36 +13,6 @@ This also defines the variable 'sourced.text', which is a list of character vect
 and can be used for reproducibility in the document itself.
 "
 
-.pandoc.opts <-  function (resource.dir, 
-                           .local.mathjax = "/usr/share/javascript/mathjax/MathJax.js",
-                           macros = "macros.tex" ) {
-        .mathjax <- if (file.exists(.local.mathjax)) { .local.mathjax } else { "https://cdn.mathjax.org/mathjax/latest/MathJax.js" }
-        opts <- c("--to html", 
-                   "--from markdown",
-                   "--self-contained", 
-                   "--standalone", 
-                   "--section-divs", 
-                   paste("--template", file.path(resource.dir,"rmarkdown-template.html")), 
-                   "--variable 'theme:bootstrap'", 
-                   paste("--include-in-header ", file.path(resource.dir,"header-scripts.html")), 
-                   "--mathjax", 
-                   paste("--variable 'mathjax-url:",.mathjax,"?config=TeX-AMS-MML_HTMLorMML'",sep=''), 
-                   paste("--variable 'libraries-url:",resource.dir,"'",sep=''), 
-                   "--no-highlight", 
-                   paste("--variable highlightjs=",file.path(resource.dir,"highlight"),sep=''), 
-                   paste("--include-in-header ", file.path(resource.dir,"mathjax-config.js"))
-               )
-        if (file.exists(macros)) {
-            temp.macros <- tempfile()
-            cat("\\[", temp.macros)
-            file.append(temp.macros,macros)
-            cat("\\]", temp.macros, append=TRUE)
-            opts <- c( opts, 
-                   paste("--include-in-header ", temp.macros) )
-        }
-        return(opts)
-}
-
 cat(paste(commandArgs(),collapse=" "),"\n")
 
 # if debugging interactively, define 'args'
