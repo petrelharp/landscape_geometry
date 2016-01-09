@@ -49,6 +49,7 @@ run_template <- function ( template,
     cat(paste("knitr::opts_knit$set(", paste(names(opts.knit),opts.knit,sep="="), ")\n"))
     cat(paste("knitr::knit('",template.loc,"',output='",basename(md.file),"')\n",sep=''))
     setwd(md.dir)
+    on.exit(setwd(thisdir),add=TRUE)
 	knitr::opts_chunk$set( fig.path=file.path("figure",outbase,""),
                            cache.path=file.path("cache",outbase,"") )
     do.call( knitr::opts_chunk$set, opts.knit )
@@ -59,8 +60,6 @@ run_template <- function ( template,
         cat("pandoc", c( basename(md.file), .pandoc.opts(resource.dir.loc,macros=macros.loc), paste("--output", output.loc) ),"\n" )
         system2( "pandoc", args=c( basename(md.file), .pandoc.opts(resource.dir.loc,macros=macros.loc), paste("--output", output.loc) ) )
     }
-    # change back
-    setwd(thisdir)
     return(output.loc)
 }
 

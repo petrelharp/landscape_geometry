@@ -28,14 +28,14 @@ layer.extents <- structure(c(233443.098570033, 311701.205571521, -229665.0380799
                     "Xerospermophilus_mohavensis_broad_extent_avg_cleaned.tif", 
                     "Yucca_brevifolia_broad_extent_avg_cleaned.tif")))
 
-layer.files <- file.path("../layers/cleaned", names(layer.extents))
+layer.files <- file.path("../layers/cleaned", colnames(layer.extents))
 
 source("run_template.R")  # provides run_template function
 
-dir.create("expansion-speeds",supressWarnings=TRUE)
+dir.create("expansion-speeds",showWarnings=FALSE)
 
 for (k in seq_along(layer.files)) {
-    output.file <- file.path( expansion.speeds, paste(names(layer.extents)[k],"_speed.html",sep='') )
+    output.file <- file.path( "expansion.speeds", paste(colnames(layer.extents)[k],"_speed.html",sep='') )
     habitat <- crop( raster( layer.files[k] ), extent(layer.extents[,k]) )
     run_template( "expansion-speed-template.Rmd", output=output.file )
 }
