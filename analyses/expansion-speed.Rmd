@@ -12,7 +12,6 @@ knitr::opts_chunk$set(fig.width=2*fig.dim,fig.height=fig.dim,fig.align='center')
 library(Matrix)
 library(raster)
 library(rgeos)
-# library(gstat)
 library(parallel)
 devtools::load_all("../landsim")
 ```

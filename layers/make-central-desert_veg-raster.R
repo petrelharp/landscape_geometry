@@ -54,7 +54,22 @@ counties <- get_counties(vegmap)
 elev <- get_dem(vegmap)
 shade <- get_elev(vegmap)
 
-# plot
+
+# plot vegmap
+png(file="central-desert_veg.png",width=8*150,height=8*150,res=150,pointsize=10)
+
+vegtype.cols <- rainbow_hcl(nlevels(vegmap$LABEL_1))
+vegtype.cols[match("Creosote",levels(vegmap$LABEL_1))] <- "gold2"
+
+plot( shade, col=adjustcolor(grey(seq(0,1,length.out=101)),0.5), legend=FALSE )
+plot( vegmap, col=vegtype.cols[vegmap$LABEL_1], border=NA, add=TRUE )
+lines(counties,lty=2,col=adjustcolor("black",0.5))
+lines(elev,col=adjustcolor('black',0.25))
+
+dev.off()
+
+
+# plot paritition
 png(file="central-desert_veg-parition.png",width=8*150,height=8*150,res=150,pointsize=10)
 
 type.cols <- RColorBrewer::brewer.pal(length(types),"Dark2")
