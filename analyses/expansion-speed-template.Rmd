@@ -90,7 +90,7 @@ sim_expansion <- function (pop, demog) {
     radius_fun <- function (N) { apply( N, 2, function (x) { suppressWarnings( max( dists[ x>0 ] ) ) } ) }
     summary.funs <- list( totals=function(N){colSums(N)}, volume=volume_fun, radius=radius_fun)
     # try until establishment
-    for (ntries in 1:100) {
+    for (ntries in 1:200) {
         pop <- set_N( pop, i=which(pop$habitable), j="aA", 
                  value=ifelse(1:nrow(pop$N)==mutloc$cell.number,1,0) )
         sim <- simulate_pop( pop, demog, times=seq(0,200,length.out=11),
@@ -98,7 +98,7 @@ sim_expansion <- function (pop, demog) {
         total.aA <- sim$summaries[[1]][nrow(sim$summaries[[1]]),"aA"]
         if ( total.aA>0 ) { break }
     }
-    if (total.aA==0) { return( list(sim=NA, pop=NA, speed=NA) ) }
+    if (total.aA==0) { return( NULL ) }  # didn't work
     ## Run longer 
     sim <- extend_simulation( sim, pop, demog, times=seq(sim$t,1000,length.out=41),
                          summaries = summary.funs, stop.fun=function(N){ sum(N)==0 } )
@@ -123,6 +123,12 @@ s.sims <- lapply( svals, function (s) {
                  demog$prob.germination$s <- s
                  sim_expansion(pop,demog)
               } )
+```
+```{r cull_different_s}
+# remove those that didn't work
+goodones <- ! sapply( s.sims, is.null )
+svals <- svals[ goodones ]
+s.sims <- s.sims[ goodones ]
 ```
 
 ```{r plot_different_s}
