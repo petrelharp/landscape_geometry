@@ -91,8 +91,8 @@ pop$N[] <- sim$N[,,2]
 
 Here is a function to initiate and track many mutations:
 ```{r setup_mutation_sim, cache=TRUE}
-n.sims <- 30
-points.per.sim <- 30
+n.sims <- 20
+points.per.sim <- 20
 sim_estab <- function (pop, demog) {
     nhood.radius <- 1000
     many.sims <- lapply( 1:n.sims, function (dummy) {
@@ -143,6 +143,12 @@ for (k in seq_along(s.sims)) {
 
 Here are the probabilities, and also
 coordinates of mutations, along with whether they established:
+```{r write_results}
+res.tab <- cbind( s=svals, 
+                 p_estab=sapply( s.sims, function (x) { mean(x$established) } ),
+                 n=sapply( s.sims, function (x) { length(x$established) } ) )
+write_table_cache(res.tab)
+```
 ```{r results, comment=NA}
 dput( cbind( s=svals, p_estab=sapply( s.sims, function (x) { mean(x$established) } ) ) )
 dput(svals)

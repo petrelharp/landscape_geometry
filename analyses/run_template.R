@@ -84,9 +84,9 @@ run_template <- function ( template,
                )
         if (file.exists(macros)) {
             temp.macros <- tempfile()
-            cat("\\[", temp.macros)
+            cat("\\[", file=temp.macros)
             file.append(temp.macros,macros)
-            cat("\\]", temp.macros, append=TRUE)
+            cat("\\]", file=temp.macros, append=TRUE)
             opts <- c( opts, 
                    paste("--include-in-header ", temp.macros) )
         }
@@ -94,9 +94,24 @@ run_template <- function ( template,
 }
 
 
-# ffmpeg v2.8.4 has broken webm output so use mp4
-# this is how to tell knitr to use it
+# output mp4 instead of webm
 .hook_ffmpeg_html <- function (x, options) { knitr:::hook_ffmpeg(x, options, ".mp4") }
 
 
-
+#' Write Out a Table to knitr's Cache Directory
+#'
+#' Writes out the given table to a text file to the currently used cache directory,
+#' and returns the path to the file written.
+#'
+#' @param x Data to write out.
+#' @param file File name to write to.
+#' @param ... Other parameters passed to write.csv().
+#' @export
+#' @return The name of the output file.
+write_table_cache <- function (x,
+                               file=paste(knitr::opts_current$get("label"),".csv",sep=''),
+                               ...) {
+    outfile <- file.path( knitr::opts_current$get("cache_path"), file )
+    write.csv( x, file=file, ... )
+    return( outfile )
+}
