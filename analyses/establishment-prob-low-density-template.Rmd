@@ -1,0 +1,152 @@
+---
+title: "Probability of establishment"
+author: "Peter Ralph"
+date: "`r Sys.Date()`"
+---
+
+```{r doc_setup, include=FALSE}
+fig.dim <- 5
+knitr::opts_chunk$set(
+              fig.width=3*fig.dim,
+              fig.height=fig.dim,
+              fig.align='center',
+              error=FALSE )
+library(Matrix)
+library(raster)
+library(rgeos)
+library(landsim)
+```
+
+Command-line for this file:
+```{r call, echo=FALSE}
+paste(commandArgs(),collapse=" ")
+```
+
+```{r analysis_setup, echo=FALSE}
+required <- c("habitat")
+usage <- " \
+Before rendering this file, the following must be defined: \
+    habitat : a RasterLayer \
+but they can't be found.
+"
+if ( !all(sapply(required,exists)) ) { stop(usage) }
+```
+
+Here's the standard demography,
+motivated by Joshua tree,
+and *modified to lower density*.
+To change the selection coefficient we change `demog$prob.germination$s`.
+The mean number of offspring at density $N$ offsets death when
+$$
+p_\text{seed} \times f \times \frac{ r_0 }{ 1 + N/C } = 1-p_\text{surv}
+$$
+which occurs when
+$$
+\left( \frac{ p_\text{seed} f r_0 }{1-p_\text{surv}} - 1 \right) = N/C
+$$
+Here we have
+$$
+\left( \frac{ 0.2 \times 100 \times .01 }{1-0.9} - 1 \right) = N/C = 1
+$$
+so we can make lower densities by reducing $C$, the carrying capacity.
+```{r setup_demog, echo=FALSE}
+demog <- demography(
+        prob.seed = 0.2, fecundity = 100,
+        prob.germination = vital( 
+                 function (N, ...) {
+                     out <- r0 / ( 1 + rowSums(N)/carrying.capacity )
+                     return( cbind( aa=out, aA=(1+s)*out, AA=(1+s)^2*out ) )
+                 },
+                 r0 = 0.01,  s = 0.5 ),
+        prob.survival = 0.9,
+        pollen.migration = migration(
+                 kern = function (x) { exp(-sqrt(x)) },
+                 sigma = 300, radius = 1200, normalize = NULL ),
+        seed.migration = migration(
+                 kern = "gaussian", sigma = 100,
+                 radius = 1200, normalize = 1 ),
+        genotypes = c("aa","aA","AA")
+    )
+```
+
+Here's the standard population, ditto:
+```{r init_demog}
+base.carrying.capacity <- 1.20 * prod(res(habitat))/270^2  # 120x lower than original
+habitable <- (!is.na(values(habitat)) & values(habitat)>0)
+pop <- population( 
+                  habitat = habitat,
+                  # accessible = !is.na(values(habitat)),
+                  accessible = habitable,
+                  habitable = habitable,
+                  genotypes = c("aa","aA","AA"),
+                  carrying.capacity = base.carrying.capacity * values(habitat)[habitable],
+                  N = cbind( aa=rpois(sum(habitable),base.carrying.capacity),
+                             aA=0, AA=0 )
+             )
+demog <- setup_demography( demog, pop )
+# burn-in
+sim <- simulate_pop( pop, demog, times=c(0,100) )
+pop$N[] <- sim$N[,,2]
+```
+
+Here is a function to initiate and track many mutations:
+```{r setup_mutation_sim, cache=TRUE}
+n.sims <- 20
+points.per.sim <- 20
+sim_estab <- function (pop, demog) {
+    nhood.radius <- 1000
+    many.sims <- lapply( 1:n.sims, function (dummy) {
+            nhoods <- sample_neighborhoods( x=mask(habitat,habitat,maskvalue=0), n=points.per.sim, 
+                                   radius=nhood.radius, separation=2*nhood.radius )
+            pop <- set_N( pop, i=which(pop$habitable), j="aA", 
+                     value=ifelse(which(pop$habitable)%in%nhoods$center.cells,1,0) )
+            sim <- simulate_pop( pop, demog, times=c(1,50,100),
+                             summaries=c( census_neighborhoods( pop, nhoods ),  
+                                        list( totals=function(N){colSums(N)} ) ),
+                         stop.fun=function(N){ sum(N)==0 } )
+            return( list( centers=nhoods$centers, summaries=sim$summaries ) )
+         } )
+    sim.results <- list( centers = SpatialPoints( do.call(rbind,lapply(lapply(many.sims,"[[","centers"),coordinates)) ),
+                        established = do.call( c, lapply( many.sims, function (ms)
+                           {( (ms$summaries[["aA"]]+ms$summaries[["AA"]])[nrow(ms$summaries[["aA"]]),] > 0 )} ) )
+                        )
+    return( sim.results )
+}
+```
+
+Now let's apply it across a range of $s$:
+```{r different_s, cache=TRUE, depends="setup_mutation_sim"}
+svals <- seq(.025,.4,length.out=25)
+s.sims <- lapply( svals, function (s) {
+                 demog$prob.germination$s <- s
+                 sim_estab(pop,demog)
+              } )
+```
+
+The overall probabilities of establishment are:
+```{r mean_probs}
+cbind( s=svals, p_estab=sapply( s.sims, function (x) { mean(x$established) } ) )
+```
+
+Here are the results:
+```{r plot_interp_prob, fig.height=1.5*fig.dim, fig.width=1.5*fig.dim}
+for (k in seq_along(s.sims)) {
+    plot( habitat, main=sprintf("s=%f",svals[k]) )
+    points(s.sims[[k]]$centers,pch=20,col=adjustcolor(1+s.sims[[k]]$established,0.5))
+}
+```
+
+
+
+
+# Raw data:
+
+Here are the probabilities, and also
+coordinates of mutations, along with whether they established:
+```{r results, comment=NA}
+dput( cbind( s=svals, p_estab=sapply( s.sims, function (x) { mean(x$established) } ) ) )
+dput(svals)
+dput( s.sims )
+```
+
+
