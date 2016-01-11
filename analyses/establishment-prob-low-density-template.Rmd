@@ -71,7 +71,7 @@ demog <- demography(
 
 Here's the standard population, ditto:
 ```{r init_demog}
-base.carrying.capacity <- 1.20 * prod(res(habitat))/270^2  # 120x lower than original
+base.carrying.capacity <- 3.0 * prod(res(habitat))/270^2  # 12x lower than original, hovers around 1 per cell
 habitable <- (!is.na(values(habitat)) & values(habitat)>0)
 pop <- population( 
                   habitat = habitat,
