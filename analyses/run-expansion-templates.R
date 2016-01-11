@@ -32,10 +32,10 @@ layer.files <- file.path("../layers/cleaned", colnames(layer.extents))
 
 source("run_template.R")  # provides run_template function
 
-dir.create("expansion-speeds",showWarnings=FALSE)
+dir.create("expansion.speeds",showWarnings=FALSE)
 
 for (k in seq_along(layer.files)) {
     output.file <- file.path( "expansion.speeds", paste(colnames(layer.extents)[k],"_speed.html",sep='') )
     habitat <- crop( raster( layer.files[k] ), extent(layer.extents[,k]) )
-    run_template( "expansion-speed-template.Rmd", output=output.file )
+    try( run_template( "expansion-speed-template.Rmd", output=output.file ) )
 }

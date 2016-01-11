@@ -35,7 +35,9 @@ source("run_template.R")  # provides run_template function
 dir.create("establishment-probs",showWarnings=FALSE)
 
 for (k in seq_along(layer.files)) {
-    output.file <- file.path( "establishment-probs", paste(colnames(layer.extents)[k],"_speed.html",sep='') )
+    ## output.file <- file.path( "establishment-probs", paste(colnames(layer.extents)[k],"_speed.html",sep='') )
+    ## output.file <- file.path( "establishment-probs", paste(colnames(layer.extents)[k],"_speed_2.html",sep='') )
+    output.file <- file.path( "establishment-probs", paste(colnames(layer.extents)[k],"_prob_3.html",sep='') )
     habitat <- crop( raster( layer.files[k] ), extent(layer.extents[,k]) )
-    run_template( "establishment-prob-template.Rmd", output=output.file )
+    try( run_template( "establishment-prob-template.Rmd", output=output.file ) )
 }

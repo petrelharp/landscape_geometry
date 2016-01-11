@@ -77,7 +77,7 @@ pop$N[] <- sim$N[,,2]
 
 Here is a function to initiate and track many mutations:
 ```{r setup_mutation_sim, cache=TRUE}
-n.sims <- 100
+n.sims <- 10
 points.per.sim <- 20
 sim_estab <- function (pop, demog) {
     nhood.radius <- 1000
