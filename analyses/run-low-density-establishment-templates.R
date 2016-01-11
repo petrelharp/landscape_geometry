@@ -36,7 +36,8 @@ outdir <- "establishment-probs_low-density"
 dir.create(outdir,showWarnings=FALSE)
 
 for (k in seq_along(layer.files)) {
-    output.file <- file.path( outdir, paste(colnames(layer.extents)[k],"_prob.html",sep='') )
+    this.id <- round(1e4*runif(1))
+    output.file <- file.path( outdir, paste(colnames(layer.extents)[k],"_",this.id,"_prob.html",sep='') )
     habitat <- crop( raster( layer.files[k] ), extent(layer.extents[,k]) )
-    run_template( "establishment-prob-low-density-template.Rmd", output=output.file )
+    try( run_template( "establishment-prob-low-density-template.Rmd", output=output.file ) )
 }
