@@ -75,6 +75,14 @@ sim <- simulate_pop( pop, demog, times=c(0,100) )
 pop$N[] <- sim$N[,,2]
 ```
 
+Here are the **actual mean dispersal distances**:
+```{r real_sigmas}
+seed.sigmas <- dispersal_distance(demog$seed.migration$M,pop)
+pollen.sigmas <- dispersal_distance(demog$pollen.migration$M,pop)
+rbind(seed=seed.sigmas,pollen=pollen.sigmas)
+```
+
+
 This function will pick a location for a mutation, start a wave there, and measure its speed:
 ```{r run_setup}
 sim_expansion <- function (pop, demog) {
@@ -118,7 +126,7 @@ sim_expansion <- function (pop, demog) {
 
 Now let's apply it to different places and different values of $s$:
 ```{r different_s, cache=TRUE}
-svals <- rep( c(.025, .05, 0.1, 0.2, 0.4), each=5 )
+svals <- rep( c(.025, .05, 0.1, 0.2, 0.4), each=3 )
 s.sims <- lapply( svals, function (s) {
                  demog$prob.germination$s <- s
                  sim_expansion(pop,demog)
