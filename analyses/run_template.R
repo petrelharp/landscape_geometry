@@ -25,7 +25,7 @@
 run_template <- function ( template,
                            output,
                            html=grepl("html$",output),
-                           md.file=paste(gsub("[.]html$","",output),".md",sep=''),
+                           md.file=gsub("[.](html|md)$",".md",output),
                            resource.dir="../resources",
                            macros="macros.tex",
                            opts.knit=list( animation.fun=.hook_ffmpeg_html )
@@ -111,7 +111,7 @@ run_template <- function ( template,
 write_table_cache <- function (x,
                                file=paste(knitr::opts_current$get("label"),".csv",sep=''),
                                ...) {
-    outfile <- file.path( knitr::opts_current$get("cache_path"), file )
+    outfile <- file.path( knitr::opts_current$get("cache.path"), file )
     write.csv( x, file=file, ... )
     return( outfile )
 }
