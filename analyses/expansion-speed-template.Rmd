@@ -77,9 +77,9 @@ pop$N[] <- sim$N[,,2]
 
 Here are the **actual mean dispersal distances**:
 ```{r real_sigmas}
-seed.sigmas <- dispersal_distance(demog$seed.migration$M,pop)
-pollen.sigmas <- dispersal_distance(demog$pollen.migration$M,pop)
-rbind(seed=seed.sigmas,pollen=pollen.sigmas)
+seed.sigma <- mean(dispersal_distance(demog$seed.migration$M,pop))
+pollen.sigma <- mean(dispersal_distance(demog$pollen.migration$M,pop))
+rbind(seed=seed.sigma, pollen=pollen.sigma)
 ```
 
 
